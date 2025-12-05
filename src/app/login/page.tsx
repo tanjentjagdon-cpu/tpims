@@ -142,12 +142,21 @@ export default function LoginPage() {
           box-sizing: border-box;
         }
 
+        html {
+          height: 100%;
+          overflow: hidden;
+          overscroll-behavior: none;
+        }
+
         body {
           font-family: "Poppins", sans-serif;
           background-color: var(--bg-color);
           transition: background-color 0.3s ease;
           margin: 0;
           padding: 0;
+          height: 100%;
+          overflow: hidden;
+          overscroll-behavior: none;
         }
 
         .bg-animation {
@@ -477,11 +486,19 @@ export default function LoginPage() {
           display: flex;
           justify-content: center;
           align-items: center;
-          min-height: 100vh;
-          min-height: 100dvh;
+          min-height: 100%;
+          height: 100%;
           background: var(--bg-color);
           padding: 20px;
           padding-top: 70px;
+          overflow-y: auto;
+          overflow-x: hidden;
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          overscroll-behavior: contain;
         }
 
         .theme-switch {

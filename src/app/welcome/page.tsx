@@ -47,6 +47,13 @@ export default function WelcomePage() {
           box-sizing: border-box;
         }
 
+        html {
+          height: 100%;
+          overflow: hidden;
+          position: fixed;
+          width: 100%;
+        }
+
         body {
           font-family: "Poppins", sans-serif;
           background-color: var(--bg-color);
@@ -54,6 +61,10 @@ export default function WelcomePage() {
           margin: 0;
           padding: 0;
           overflow: hidden;
+          height: 100%;
+          position: fixed;
+          width: 100%;
+          overscroll-behavior: none;
         }
 
         .theme-switch {
@@ -379,11 +390,14 @@ export default function WelcomePage() {
           flex-direction: column;
           justify-content: center;
           align-items: center;
-          min-height: 100vh;
-          min-height: 100dvh;
+          height: 100%;
+          width: 100%;
           background-color: #fff0f5;
           transition: all 0.3s ease;
           overflow: hidden;
+          position: fixed;
+          top: 0;
+          left: 0;
         }
 
         body.dark-mode {

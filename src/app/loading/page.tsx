@@ -49,6 +49,13 @@ export default function LoadingPage() {
           box-sizing: border-box;
         }
 
+        html {
+          height: 100%;
+          overflow: hidden;
+          position: fixed;
+          width: 100%;
+        }
+
         body {
           margin: 0;
           padding: 0;
@@ -56,11 +63,15 @@ export default function LoadingPage() {
           display: flex;
           justify-content: center;
           align-items: center;
-          min-height: 100vh;
-          min-height: 100dvh;
+          height: 100%;
+          width: 100%;
           font-family: "Poppins", sans-serif;
           transition: background-color 0.3s ease;
           overflow: hidden;
+          position: fixed;
+          top: 0;
+          left: 0;
+          overscroll-behavior: none;
         }
 
         .loader {
