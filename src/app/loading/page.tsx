@@ -65,7 +65,7 @@ export default function LoadingPage() {
 
         .loader {
           font-family: "Poppins", sans-serif;
-          font-size: 30px;
+          font-size: clamp(16px, 5vw, 30px);
           height: var(--row-height);
           width: 100%;
           max-width: 800px;
@@ -73,6 +73,7 @@ export default function LoadingPage() {
           justify-content: center;
           align-items: center;
           gap: 0;
+          padding: 0 10px;
         }
 
         .col-left, .col-right {
@@ -89,7 +90,7 @@ export default function LoadingPage() {
           padding-right: 0;
           color: var(--static-text-color);
           font-weight: 500;
-          width: 250px;
+          width: clamp(100px, 40vw, 250px);
         }
 
         .col-right {
@@ -97,7 +98,7 @@ export default function LoadingPage() {
           padding-left: 0;
           color: var(--animated-text-color);
           font-weight: 700;
-          width: 250px;
+          width: clamp(100px, 40vw, 250px);
         }
 
         .word {
