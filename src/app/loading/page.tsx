@@ -49,39 +49,18 @@ export default function LoadingPage() {
           box-sizing: border-box;
         }
 
-        html, body {
+        body {
           margin: 0;
           padding: 0;
           background-color: var(--bg-color);
           display: flex;
           justify-content: center;
           align-items: center;
-          height: 100%;
+          min-height: 100vh;
+          min-height: 100dvh;
           font-family: "Poppins", sans-serif;
           transition: background-color 0.3s ease;
           overflow: hidden;
-        }
-
-        @media (max-width: 768px) {
-          .loader {
-            font-size: 20px !important;
-            flex-direction: column;
-            gap: 10px;
-          }
-          .col-left, .col-right {
-            width: 200px !important;
-            text-align: center !important;
-            align-items: center !important;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .loader {
-            font-size: 16px !important;
-          }
-          .col-left, .col-right {
-            width: 150px !important;
-          }
         }
 
         .loader {
