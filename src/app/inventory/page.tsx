@@ -905,7 +905,7 @@ export default function InventoryPage() {
                 onClick={() => {
                   setShowModal(false);
                   setEditingProductId(null);
-                  setFormData({ category: '', type: '', productName: '', quantity: '', image: null, costPerYard: '', soldPerYard: '', soldPerHalfYard: '' });
+                  setFormData({ category: '', type: '', productName: '', quantity: '', image: null });
                 }}
                 className="text-2xl"
                 style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d', cursor: 'pointer' }}>
