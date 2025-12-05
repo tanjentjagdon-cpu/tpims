@@ -621,7 +621,7 @@ export default function CashFlowsPage() {
           {/* Add Cashflow Modal */}
           {showModal && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="rounded-2xl w-full max-w-2xl flex flex-col max-h-[90vh]" style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
+              <div className="rounded-2xl w-full max-w-[95vw] md:max-w-2xl flex flex-col max-h-[90vh]" style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
                 {/* Modal Header - Fixed */}
                 <div className="flex justify-between items-center p-6 flex-shrink-0" style={{ borderBottom: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
                   <h2 className="text-2xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>

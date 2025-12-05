@@ -408,7 +408,7 @@ export default function InventoryPage() {
       {/* UI Alert */}
       {alertMessage && (
         <div 
-          className="fixed bottom-6 right-6 z-50 p-4 rounded-lg flex items-center gap-3 shadow-lg transition-all"
+          className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:bottom-6 z-50 p-3 md:p-4 rounded-lg flex items-center gap-2 md:gap-3 shadow-lg transition-all"
           style={{
             backgroundColor: alertMessage.type === 'success' 
               ? (isDarkMode ? '#1a3a1a' : '#dcfce7')
@@ -416,7 +416,7 @@ export default function InventoryPage() {
             border: `1px solid ${alertMessage.type === 'success'
               ? (isDarkMode ? '#15803d' : '#86efac')
               : (isDarkMode ? '#7c2d2d' : '#fecaca')}`,
-            minWidth: '300px'
+            maxWidth: '100%',
           }}>
           <span className="text-2xl">
             {alertMessage.type === 'success' ? '✅' : '❌'}
@@ -894,11 +894,11 @@ export default function InventoryPage() {
 
       {/* Add Product Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-2xl w-full max-w-2xl flex flex-col max-h-[90vh]" style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 md:p-4">
+          <div className="rounded-2xl w-full max-w-[95vw] md:max-w-2xl flex flex-col max-h-[90vh]" style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
             {/* Modal Header - Fixed */}
-            <div className="flex justify-between items-center p-6 flex-shrink-0" style={{ borderBottom: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
-              <h2 className="text-2xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
+            <div className="flex justify-between items-center p-4 md:p-6 flex-shrink-0" style={{ borderBottom: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
+              <h2 className="text-xl md:text-2xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
                 {editingProductId ? 'Edit Product' : 'Add Product'}
               </h2>
               <button
@@ -914,13 +914,13 @@ export default function InventoryPage() {
             </div>
 
             {/* Modal Content - Scrollable */}
-            <form onSubmit={handleAddProduct} className="flex-1 overflow-y-auto p-6 space-y-4" id="product-form">
+            <form onSubmit={handleAddProduct} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4" id="product-form">
               {/* Category - Can select or manually enter */}
               <div>
                 <label className="block text-sm font-medium mb-2" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
                   Category
                 </label>
-                <div className="flex gap-2">
+                <div className="flex flex-col md:flex-row gap-2">
                   <select
                     value={formData.category}
                     onChange={(e) => {
@@ -929,7 +929,7 @@ export default function InventoryPage() {
                         setFormData({...formData, category: selected, type: '', productName: ''});
                       }
                     }}
-                    className="flex-1 px-4 py-2 rounded-lg outline-none transition-all"
+                    className="w-full md:flex-1 px-4 py-2 rounded-lg outline-none transition-all"
                     style={{
                       backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
                       color: isDarkMode ? '#e8eaed' : '#2c3e50',
@@ -945,7 +945,7 @@ export default function InventoryPage() {
                     placeholder="or type..."
                     value={formData.category}
                     onChange={(e) => setFormData({...formData, category: e.target.value})}
-                    className="flex-1 px-4 py-2 rounded-lg outline-none transition-all"
+                    className="w-full md:flex-1 px-4 py-2 rounded-lg outline-none transition-all"
                     style={{
                       backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
                       color: isDarkMode ? '#e8eaed' : '#2c3e50',
@@ -983,7 +983,7 @@ export default function InventoryPage() {
                 <label className="block text-sm font-medium mb-2" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
                   Product Name
                 </label>
-                <div className="flex gap-2">
+                <div className="flex flex-col md:flex-row gap-2">
                   <select
                     value={formData.productName}
                     onChange={(e) => {
@@ -993,7 +993,7 @@ export default function InventoryPage() {
                       }
                     }}
                     disabled={!formData.type}
-                    className="flex-1 px-4 py-2 rounded-lg outline-none transition-all"
+                    className="w-full md:flex-1 px-4 py-2 rounded-lg outline-none transition-all"
                     style={{
                       backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
                       color: isDarkMode ? '#e8eaed' : '#2c3e50',
@@ -1011,7 +1011,7 @@ export default function InventoryPage() {
                     placeholder="or type..."
                     value={formData.productName}
                     onChange={(e) => setFormData({...formData, productName: e.target.value})}
-                    className="flex-1 px-4 py-2 rounded-lg outline-none transition-all"
+                    className="w-full md:flex-1 px-4 py-2 rounded-lg outline-none transition-all"
                     style={{
                       backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
                       color: isDarkMode ? '#e8eaed' : '#2c3e50',

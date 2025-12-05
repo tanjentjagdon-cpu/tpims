@@ -141,7 +141,7 @@ export default function ExpensesPage() {
       {/* UI Alert */}
       {alertMessage && (
         <div 
-          className="fixed bottom-6 right-6 z-50 p-4 rounded-lg flex items-center gap-3 shadow-lg transition-all"
+          className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:bottom-6 z-50 p-3 md:p-4 rounded-lg flex items-center gap-2 md:gap-3 shadow-lg transition-all"
           style={{
             backgroundColor: alertMessage.type === 'success' 
               ? (isDarkMode ? '#1a3a1a' : '#dcfce7')
@@ -149,9 +149,9 @@ export default function ExpensesPage() {
             border: `1px solid ${alertMessage.type === 'success'
               ? (isDarkMode ? '#15803d' : '#86efac')
               : (isDarkMode ? '#7c2d2d' : '#fecaca')}`,
-            minWidth: '300px'
+            maxWidth: '100%'
           }}>
-          <span className="text-2xl">
+          <span className="text-xl md:text-2xl">
             {alertMessage.type === 'success' ? '✅' : '❌'}
           </span>
           <p style={{
@@ -159,7 +159,7 @@ export default function ExpensesPage() {
               ? (isDarkMode ? '#86efac' : '#15803d')
               : (isDarkMode ? '#fca5a5' : '#991b1b'),
             fontWeight: '600',
-            fontSize: '14px'
+            fontSize: '13px'
           }}>
             {alertMessage.message}
           </p>
@@ -170,7 +170,7 @@ export default function ExpensesPage() {
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              fontSize: '20px',
+              fontSize: '18px',
               color: 'inherit',
             }}>
             ✕
@@ -640,16 +640,16 @@ export default function ExpensesPage() {
         {/* Modal */}
         {showModal && (
           <div
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 md:p-4"
             onClick={() => setShowModal(false)}>
             <div
-              className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-[95vw] md:max-w-2xl w-full max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
               style={{
                 backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff',
               }}>
-              <div className="p-6 md:p-8 border-b" style={{ borderColor: isDarkMode ? '#2d2d44' : '#e1e8ed' }}>
-                <h2 className="text-2xl md:text-3xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
+              <div className="p-4 md:p-8 border-b" style={{ borderColor: isDarkMode ? '#2d2d44' : '#e1e8ed' }}>
+                <h2 className="text-xl md:text-3xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
                   {editingExpenseId ? '✏️ Edit Expense' : '➕ Add Expense'}
                 </h2>
               </div>

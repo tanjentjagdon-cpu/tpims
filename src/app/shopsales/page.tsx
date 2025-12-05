@@ -767,7 +767,7 @@ export default function ShopSalesPage() {
       )}
 
       {alertMessage && (
-        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-lg flex items-center gap-3 shadow-lg"
+        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:bottom-6 z-50 p-3 md:p-4 rounded-lg flex items-center gap-2 md:gap-3 shadow-lg"
           style={{
             backgroundColor: alertMessage.type === 'success' 
               ? (isDarkMode ? '#1a3a1a' : '#dcfce7')
@@ -775,7 +775,7 @@ export default function ShopSalesPage() {
             border: `1px solid ${alertMessage.type === 'success'
               ? (isDarkMode ? '#15803d' : '#86efac')
               : (isDarkMode ? '#7c2d2d' : '#fecaca')}`,
-            minWidth: '300px'
+            maxWidth: '100%'
           }}>
           <span className="text-2xl">{alertMessage.type === 'success' ? '✅' : '❌'}</span>
           <p style={{
@@ -1370,7 +1370,7 @@ export default function ShopSalesPage() {
           {/* Add Sale Modal */}
           {showModal && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="rounded-2xl w-full max-w-2xl flex flex-col max-h-[90vh] relative" style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
+              <div className="rounded-2xl w-full max-w-[95vw] md:max-w-2xl flex flex-col max-h-[90vh] relative" style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
                 {/* Modal Header - Fixed */}
                 <div className="flex justify-between items-center p-6 flex-shrink-0" style={{ borderBottom: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
                   <h2 className="text-2xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
@@ -2010,7 +2010,7 @@ export default function ShopSalesPage() {
           {expandedSaleId && sales.find(s => s.id === expandedSaleId) && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setExpandedSaleId(null)}>
               <div 
-                className="rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+                className="rounded-2xl w-full max-w-[95vw] md:max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
                 onClick={(e) => e.stopPropagation()}
                 style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
                 {(() => {

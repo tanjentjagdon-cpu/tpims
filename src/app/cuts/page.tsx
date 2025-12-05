@@ -282,17 +282,17 @@ export default function CutsPage() {
 
       {/* Alert */}
       {alertMessage && (
-        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-lg flex items-center gap-3 shadow-lg"
+        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:bottom-6 z-50 p-3 md:p-4 rounded-lg flex items-center gap-2 md:gap-3 shadow-lg"
           style={{
             backgroundColor: alertMessage.type === 'success' ? (isDarkMode ? '#1a3a1a' : '#dcfce7') : (isDarkMode ? '#3a1a1a' : '#fee2e2'),
             border: `1px solid ${alertMessage.type === 'success' ? (isDarkMode ? '#15803d' : '#86efac') : (isDarkMode ? '#7c2d2d' : '#fecaca')}`,
-            minWidth: '300px'
+            maxWidth: '100%'
           }}>
-          <span className="text-2xl">{alertMessage.type === 'success' ? '✅' : '❌'}</span>
-          <p style={{ color: alertMessage.type === 'success' ? (isDarkMode ? '#86efac' : '#15803d') : (isDarkMode ? '#fca5a5' : '#991b1b'), fontWeight: '600', fontSize: '14px' }}>
+          <span className="text-xl md:text-2xl">{alertMessage.type === 'success' ? '✅' : '❌'}</span>
+          <p style={{ color: alertMessage.type === 'success' ? (isDarkMode ? '#86efac' : '#15803d') : (isDarkMode ? '#fca5a5' : '#991b1b'), fontWeight: '600', fontSize: '13px' }}>
             {alertMessage.message}
           </p>
-          <button onClick={() => setAlertMessage(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px' }}>✕</button>
+          <button onClick={() => setAlertMessage(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>✕</button>
         </div>
       )}
 

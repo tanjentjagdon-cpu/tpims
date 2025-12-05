@@ -256,6 +256,64 @@ body.dark-mode .button-secondary::after {
   .card {
     padding: 12px !important;
   }
+  
+  /* Main content padding adjustment */
+  main {
+    padding-left: 0 !important;
+  }
+  
+  /* Header mobile adjustments */
+  header {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+  
+  /* Form inputs on mobile */
+  input, select, textarea {
+    padding: 10px 12px !important;
+    min-height: 44px;
+  }
+  
+  /* Modal adjustments for mobile */
+  .modal, [role="dialog"] {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    max-height: 85vh !important;
+    margin: 10px !important;
+    padding: 16px !important;
+  }
+  
+  /* Table responsive wrapper */
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Stats cards grid */
+  .stats-grid, .grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  
+  /* Smaller padding for containers */
+  .container, .content {
+    padding: 12px !important;
+  }
+  
+  /* Search bar mobile */
+  .search-container input {
+    width: 100% !important;
+  }
+  
+  /* Alert messages mobile */
+  .alert, [class*="alert"] {
+    max-width: calc(100vw - 24px) !important;
+    left: 12px !important;
+    right: 12px !important;
+    bottom: 12px !important;
+  }
 }
 
 @media (max-width: 480px) {
@@ -263,5 +321,48 @@ body.dark-mode .button-secondary::after {
   .button, .button-secondary, .button-element {
     padding: 6px 12px !important;
     font-size: 11px !important;
+  }
+  
+  /* Single column grid on very small screens */
+  .stats-grid, .grid {
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+  }
+  
+  /* Smaller modal padding */
+  .modal, [role="dialog"] {
+    padding: 12px !important;
+  }
+  
+  /* Smaller text */
+  p, span, label {
+    font-size: 13px;
+  }
+  
+  /* Smaller gaps */
+  .gap-4, .gap-6 {
+    gap: 8px !important;
+  }
+}
+
+/* Fix for fixed position elements on mobile */
+@media (max-width: 768px) {
+  /* Theme switch positioning */
+  .theme-switch {
+    top: 12px !important;
+    right: 12px !important;
+    z-index: 9999 !important;
+  }
+  
+  /* Better touch targets */
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Prevent horizontal scroll */
+  body, html {
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 }
