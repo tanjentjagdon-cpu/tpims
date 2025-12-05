@@ -47,10 +47,12 @@ export default function WelcomePage() {
           box-sizing: border-box;
         }
 
-        body {
+        html, body {
           font-family: "Poppins", sans-serif;
           background-color: var(--bg-color);
           transition: background-color 0.3s ease;
+          height: 100%;
+          overflow: hidden;
         }
 
         .theme-switch {
@@ -376,9 +378,30 @@ export default function WelcomePage() {
           flex-direction: column;
           justify-content: center;
           align-items: center;
-          min-height: 100vh;
+          height: 100vh;
+          height: 100dvh;
           background-color: #fff0f5;
           transition: all 0.3s ease;
+          overflow: hidden;
+          padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+          .welcome-text h1 {
+            font-size: 1.5rem !important;
+          }
+          .loader {
+            transform: scale(0.7);
+          }
+        }
+
+        @media (max-width: 480px) {
+          .welcome-text h1 {
+            font-size: 1.2rem !important;
+          }
+          .loader {
+            transform: scale(0.5);
+          }
         }
 
         body.dark-mode {

@@ -142,10 +142,28 @@ export default function LoginPage() {
           box-sizing: border-box;
         }
 
-        body {
+        html, body {
           font-family: "Poppins", sans-serif;
           background-color: var(--bg-color);
           transition: background-color 0.3s ease;
+          height: 100%;
+          overflow-x: hidden;
+        }
+
+        @media (max-width: 480px) {
+          .login-container {
+            padding: 25px 20px !important;
+            margin: 10px !important;
+            max-width: 100% !important;
+          }
+          .login-header h1 {
+            font-size: 24px !important;
+          }
+          .logo {
+            width: 80px !important;
+            height: 80px !important;
+            font-size: 32px !important;
+          }
         }
 
         .bg-animation {
@@ -476,8 +494,11 @@ export default function LoginPage() {
           justify-content: center;
           align-items: center;
           min-height: 100vh;
+          min-height: 100dvh;
           background: var(--bg-color);
           padding: 20px;
+          overflow-y: auto;
+          overflow-x: hidden;
         }
 
         .theme-switch {
