@@ -63,30 +63,6 @@ export default function LoadingPage() {
           overflow: hidden;
         }
 
-        @media (max-width: 600px) {
-          :root {
-            --row-height: 50px;
-          }
-          .loader {
-            font-size: 18px;
-          }
-          .col-left, .col-right {
-            width: 140px;
-          }
-        }
-
-        @media (max-width: 400px) {
-          :root {
-            --row-height: 40px;
-          }
-          .loader {
-            font-size: 14px;
-          }
-          .col-left, .col-right {
-            width: 110px;
-          }
-        }
-
         .loader {
           font-family: "Poppins", sans-serif;
           font-size: 30px;
