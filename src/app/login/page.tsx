@@ -502,9 +502,9 @@ export default function LoginPage() {
           --transition: .5s cubic-bezier(0, -0.02, 0.4, 1.25);
           --circle-transition: .3s cubic-bezier(0, -0.02, 0.35, 1.17);
           position: fixed;
-          top: 15px;
-          right: 15px;
-          z-index: 1000;
+          top: 20px;
+          right: 20px;
+          z-index: 9999;
         }
 
         .theme-switch, .theme-switch *, .theme-switch *::before, .theme-switch *::after {
