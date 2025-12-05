@@ -481,6 +481,7 @@ export default function LoginPage() {
           min-height: 100dvh;
           background: var(--bg-color);
           padding: 20px;
+          padding-top: 70px;
         }
 
         .theme-switch {
