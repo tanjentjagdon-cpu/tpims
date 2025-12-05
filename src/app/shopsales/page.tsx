@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useTheme } from '@/lib/themeContext';
 import * as inventoryService from '@/lib/inventoryService';
+import * as shopSalesService from '@/lib/shopSalesService';
 import Loader from '@/components/Loader';
 import Button from '@/components/Button';
 
@@ -91,187 +92,15 @@ export default function ShopSalesPage() {
   const [alertMessage, setAlertMessage] = useState<{message: string; type: 'success' | 'error'} | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  
+  // Import CSV state
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importProgress, setImportProgress] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Mock sales data - Actual Shopee orders from user
-  const [sales, setSales] = useState<Sale[]>([
-    {
-      id: '251030EMXU4GVB',
-      shop: 'Shopee',
-      productId: '31',
-      productName: 'Olive Green-Noraisa',
-      quantity: 3,
-      unitPrice: 39.00,
-      total: 117.00,
-      date: new Date('2025-10-30').toISOString(),
-      status: 'Delivered',
-    },
-    {
-      id: '251031HVHGQH1T',
-      shop: 'Shopee',
-      productId: '8',
-      productName: 'Lavender',
-      quantity: 20,
-      unitPrice: 29.00,
-      total: 580.00,
-      date: new Date('2025-10-31').toISOString(),
-      status: 'Delivered',
-    },
-    {
-      id: '251101KMFF9RUE',
-      shop: 'Shopee',
-      productId: '28',
-      productName: 'Errose-Pink',
-      quantity: 1,
-      unitPrice: 39.00,
-      total: 39.00,
-      date: new Date('2025-11-01').toISOString(),
-      status: 'Delivered',
-    },
-    {
-      id: '251101KVEB53A0',
-      shop: 'Shopee',
-      productId: '29',
-      productName: 'Esther PP-Pink',
-      quantity: 4,
-      unitPrice: 39.00,
-      total: 156.00,
-      date: new Date('2025-11-01').toISOString(),
-      status: 'Shipped',
-    },
-    {
-      id: '251101M5RR9X6C',
-      shop: 'Shopee',
-      productId: '12',
-      productName: 'Off-White',
-      quantity: 5,
-      unitPrice: 29.00,
-      total: 145.00,
-      date: new Date('2025-11-01').toISOString(),
-      status: 'Shipped',
-    },
-    {
-      id: '251101M9P956BU',
-      shop: 'Shopee',
-      productId: '4',
-      productName: 'Dark Grey',
-      quantity: 10,
-      unitPrice: 29.00,
-      total: 290.00,
-      date: new Date('2025-11-01').toISOString(),
-      status: 'Shipped',
-    },
-    {
-      id: '251101MC9JQ6NC',
-      shop: 'Shopee',
-      productId: '23',
-      productName: 'Desiree-Red',
-      quantity: 11,
-      unitPrice: 39.00,
-      total: 429.00,
-      date: new Date('2025-11-01').toISOString(),
-      status: 'Shipped',
-    },
-    {
-      id: '251101MHCYNSSV',
-      shop: 'Shopee',
-      productId: '25',
-      productName: 'Drake-Grey',
-      quantity: 3,
-      unitPrice: 39.00,
-      total: 117.00,
-      date: new Date('2025-11-01').toISOString(),
-      status: 'Shipped',
-    },
-    {
-      id: '251101MHQECM8Q',
-      shop: 'Shopee',
-      productId: '4',
-      productName: 'Dark Grey',
-      quantity: 5,
-      unitPrice: 30.00,
-      total: 150.00,
-      date: new Date('2025-11-01').toISOString(),
-      status: 'Completed',
-    },
-    {
-      id: '251102NAMEH8K7',
-      shop: 'Shopee',
-      productId: '20',
-      productName: 'Christmas Eve Red',
-      quantity: 3,
-      unitPrice: 39.00,
-      total: 117.00,
-      date: new Date('2025-11-02').toISOString(),
-      status: 'Delivered',
-    },
-    {
-      id: '251102NTQB59WP',
-      shop: 'Shopee',
-      productId: '20',
-      productName: 'Christmas Eve Red',
-      quantity: 6,
-      unitPrice: 39.00,
-      total: 234.00,
-      date: new Date('2025-11-02').toISOString(),
-      status: 'Delivered',
-    },
-    {
-      id: '251102P1VGWW9Y',
-      shop: 'Shopee',
-      productId: '31',
-      productName: 'Olive Green-Noraisa',
-      quantity: 2,
-      unitPrice: 39.00,
-      total: 78.00,
-      date: new Date('2025-11-02').toISOString(),
-      status: 'Delivered',
-    },
-    {
-      id: '251102PDK9C0AQ',
-      shop: 'Shopee',
-      productId: '22',
-      productName: 'Desiree-Lavender',
-      quantity: 10,
-      unitPrice: 39.00,
-      total: 390.00,
-      date: new Date('2025-11-02').toISOString(),
-      status: 'Shipped',
-    },
-    // Mock data for multi-product order with 20 items
-    {
-      id: '251205BULK20ITM',
-      shop: 'Shopee',
-      productId: 'multi',
-      productName: 'Olive Green-Noraisa (+19 more)',
-      quantity: 85,
-      unitPrice: 35.00,
-      total: 2975.00,
-      date: new Date('2025-12-05').toISOString(),
-      status: 'Shipped',
-      products: [
-        { productId: '1', productName: 'Olive Green-Noraisa', quantity: 5, unitPrice: 39.00, subtotal: 195.00 },
-        { productId: '2', productName: 'Lavender', quantity: 3, unitPrice: 29.00, subtotal: 87.00 },
-        { productId: '3', productName: 'Errose-Pink', quantity: 4, unitPrice: 39.00, subtotal: 156.00 },
-        { productId: '4', productName: 'Esther PP-Pink', quantity: 6, unitPrice: 39.00, subtotal: 234.00 },
-        { productId: '5', productName: 'Off-White', quantity: 3, unitPrice: 29.00, subtotal: 87.00 },
-        { productId: '6', productName: 'Dark Grey', quantity: 5, unitPrice: 29.00, subtotal: 145.00 },
-        { productId: '7', productName: 'Desiree-Red', quantity: 4, unitPrice: 39.00, subtotal: 156.00 },
-        { productId: '8', productName: 'Drake-Grey', quantity: 3, unitPrice: 39.00, subtotal: 117.00 },
-        { productId: '9', productName: 'Christmas Eve Red', quantity: 6, unitPrice: 39.00, subtotal: 234.00 },
-        { productId: '10', productName: 'Desiree-Lavender', quantity: 4, unitPrice: 39.00, subtotal: 156.00 },
-        { productId: '11', productName: 'Baby Pink', quantity: 5, unitPrice: 29.00, subtotal: 145.00 },
-        { productId: '12', productName: 'Coral', quantity: 3, unitPrice: 29.00, subtotal: 87.00 },
-        { productId: '13', productName: 'Sky Blue', quantity: 4, unitPrice: 29.00, subtotal: 116.00 },
-        { productId: '14', productName: 'Mint Green', quantity: 5, unitPrice: 29.00, subtotal: 145.00 },
-        { productId: '15', productName: 'Peach', quantity: 3, unitPrice: 29.00, subtotal: 87.00 },
-        { productId: '16', productName: 'Cream', quantity: 4, unitPrice: 29.00, subtotal: 116.00 },
-        { productId: '17', productName: 'Dusty Rose', quantity: 6, unitPrice: 39.00, subtotal: 234.00 },
-        { productId: '18', productName: 'Sage Green', quantity: 5, unitPrice: 39.00, subtotal: 195.00 },
-        { productId: '19', productName: 'Blush', quantity: 4, unitPrice: 29.00, subtotal: 116.00 },
-        { productId: '20', productName: 'Champagne', quantity: 3, unitPrice: 39.00, subtotal: 117.00 },
-      ],
-    },
-  ]);
+  // Sales data - loaded from Supabase
+  const [sales, setSales] = useState<Sale[]>([]);
 
   const [formData, setFormData] = useState({
     shop: 'Shopee' as 'Shopee' | 'TikTok' | 'Lazada',
@@ -314,6 +143,126 @@ export default function ShopSalesPage() {
     { id: 'settings', icon: '⚙️', label: 'Account Settings' },
   ];
 
+  // Function to load sales from Supabase
+  const loadSalesFromSupabase = async (userId: string) => {
+    try {
+      const supabaseSales = await shopSalesService.loadShopSales(userId);
+      // Convert Supabase format to UI format
+      const formattedSales: Sale[] = supabaseSales.map(s => ({
+        id: s.order_id,
+        shop: s.shop as 'Shopee' | 'TikTok' | 'Lazada',
+        buyerName: s.buyer_name || '',
+        contactNo: s.buyer_contact || '',
+        address: s.buyer_address || '',
+        productId: s.id, // Use UUID as productId for now
+        productName: s.product_name,
+        quantity: s.quantity,
+        unitPrice: s.item_price,
+        total: s.subtotal,
+        date: s.order_date,
+        status: s.status as 'Shipped' | 'Delivered' | 'Completed' | 'Cancelled',
+        releasedDate: s.released_date || undefined,
+        releasedTime: s.released_time || undefined,
+        incomeStatus: s.income_status as 'Pending' | 'Released',
+        // Payment details from Supabase
+        estimatedShippingFeeCharged: s.shipping_fee_charged,
+        shippingFeeRebate: s.shipping_fee_rebate,
+        serviceFee: s.service_fee,
+        transactionFee: s.transaction_fee,
+        tax: s.tax,
+        merchandiseSubtotal: s.merchandise_subtotal,
+        shippingFee: s.shipping_fee,
+        shopeeVoucher: s.shopee_voucher,
+        sellerVoucher: s.seller_voucher,
+        paymentDiscount: s.payment_discount,
+        shopeeCoinRedeem: s.shopee_coin_redeem,
+        totalBuyerPayment: s.total_buyer_payment,
+      }));
+      setSales(formattedSales);
+    } catch (error) {
+      console.error('Error loading sales:', error);
+    }
+  };
+
+  // CSV Import handler
+  const handleCSVImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    setImportLoading(true);
+    setImportProgress('Reading file...');
+
+    try {
+      const text = await file.text();
+      setImportProgress('Parsing CSV...');
+      
+      const parsedSales = shopSalesService.parseCSVFile(text, user.id);
+      
+      if (parsedSales.length === 0) {
+        setAlertMessage({ message: 'No valid sales found in CSV', type: 'error' });
+        setTimeout(() => setAlertMessage(null), 3000);
+        setImportLoading(false);
+        setShowImportModal(false);
+        return;
+      }
+
+      setImportProgress(`Importing ${parsedSales.length} sales to Supabase...`);
+      
+      const result = await shopSalesService.bulkInsertSales(parsedSales);
+      
+      if (result.errors.length > 0) {
+        console.warn('Import errors:', result.errors);
+      }
+
+      setImportProgress('Refreshing data...');
+      await loadSalesFromSupabase(user.id);
+
+      setAlertMessage({ 
+        message: `✅ Successfully imported ${result.inserted} sales!${result.errors.length > 0 ? ` (${result.errors.length} errors)` : ''}`, 
+        type: 'success' 
+      });
+      setTimeout(() => setAlertMessage(null), 5000);
+      
+    } catch (error) {
+      console.error('Import error:', error);
+      setAlertMessage({ message: 'Error importing CSV. Please check the file format.', type: 'error' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    } finally {
+      setImportLoading(false);
+      setImportProgress('');
+      setShowImportModal(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Clear all sales (for re-import)
+  const handleClearAllSales = async () => {
+    if (!user) return;
+    
+    const confirmed = window.confirm('Are you sure you want to delete ALL sales? This cannot be undone.');
+    if (!confirmed) return;
+
+    try {
+      setImportLoading(true);
+      setImportProgress('Deleting all sales...');
+      await shopSalesService.deleteAllSales(user.id);
+      setSales([]);
+      setAlertMessage({ message: 'All sales deleted successfully', type: 'success' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    } catch (error) {
+      console.error('Error clearing sales:', error);
+      setAlertMessage({ message: 'Error deleting sales', type: 'error' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    } finally {
+      setImportLoading(false);
+      setImportProgress('');
+      setShowImportModal(false);
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
     const checkAuth = async () => {
@@ -335,6 +284,9 @@ export default function ShopSalesPage() {
           quantity: p.quantity,
         }));
         setProducts(formatted);
+
+        // Load sales from Supabase
+        await loadSalesFromSupabase(session.user.id);
       } catch (error) {
         console.error('Auth error:', error);
         window.location.href = '/login';
@@ -1134,6 +1086,29 @@ export default function ShopSalesPage() {
               }} variant="secondary">
                 + Record Sale
               </Button>
+              <Button onClick={() => setShowImportModal(true)} variant="secondary">
+                📥 Import CSV
+              </Button>
+            </div>
+
+            {/* Sales Summary */}
+            <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff', border: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
+                <p className="text-xs" style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>Total Orders</p>
+                <p className="text-2xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>{filteredSales.length}</p>
+              </div>
+              <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff', border: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
+                <p className="text-xs" style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>Total Items</p>
+                <p className="text-2xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>{totalQuantity}</p>
+              </div>
+              <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff', border: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
+                <p className="text-xs" style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>Gross Sales</p>
+                <p className="text-2xl font-bold" style={{ color: '#ff69b4' }}>₱{totalSales.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
+              </div>
+              <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff', border: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
+                <p className="text-xs" style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>From Supabase</p>
+                <p className="text-lg font-bold" style={{ color: isDarkMode ? '#60a5fa' : '#3b82f6' }}>✓ Real-time</p>
+              </div>
             </div>
 
           {/* Single Search Bar with Dynamic Filter Type */}
@@ -2383,6 +2358,112 @@ export default function ShopSalesPage() {
                     🗑️ Delete
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Import CSV Modal */}
+        {showImportModal && (
+          <div
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => !importLoading && setShowImportModal(false)}>
+            <div
+              className="rounded-2xl shadow-2xl max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff',
+              }}>
+              <div className="p-6 border-b" style={{ borderColor: isDarkMode ? '#2d2d44' : '#e1e8ed' }}>
+                <h2 className="text-xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
+                  📥 Import Sales from CSV
+                </h2>
+              </div>
+
+              <div className="p-6">
+                {importLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: '#ff69b4' }}></div>
+                    <p style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50', fontWeight: '600' }}>{importProgress}</p>
+                  </div>
+                ) : (
+                  <>
+                    <p style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d', marginBottom: '16px', fontSize: '14px' }}>
+                      Upload your Shopee sales export (CSV format). The file should match the Shopee export format.
+                    </p>
+
+                    <div className="mb-4 p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#2d2d44' : '#f3f4f6' }}>
+                      <p className="text-sm font-semibold mb-2" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
+                        📋 Expected CSV columns:
+                      </p>
+                      <p className="text-xs" style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>
+                        DATE, Order number, Name, Status, Date, Buyer&apos;s Address, Products, Item Price, quantity, Total, Shipping fees, Service Fee, Transaction Fee, Tax, etc.
+                      </p>
+                    </div>
+
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".csv"
+                      onChange={handleCSVImport}
+                      className="hidden"
+                      id="csv-upload"
+                    />
+
+                    <label
+                      htmlFor="csv-upload"
+                      className="block w-full p-4 border-2 border-dashed rounded-lg text-center cursor-pointer transition-all hover:opacity-80"
+                      style={{
+                        borderColor: isDarkMode ? '#7aa6f0' : '#ff69b4',
+                        backgroundColor: isDarkMode ? '#1f1f38' : '#fff0f5',
+                      }}>
+                      <span className="text-3xl block mb-2">📂</span>
+                      <span style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50', fontWeight: '600' }}>
+                        Click to select CSV file
+                      </span>
+                      <span className="block text-xs mt-1" style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>
+                        or drag and drop
+                      </span>
+                    </label>
+
+                    {sales.length > 0 && (
+                      <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
+                        <p className="text-sm mb-2" style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>
+                          Current: {sales.length} sales in database
+                        </p>
+                        <button
+                          onClick={handleClearAllSales}
+                          className="text-sm px-4 py-2 rounded-lg transition-all"
+                          style={{
+                            backgroundColor: isDarkMode ? '#3a1a1a' : '#fee2e2',
+                            color: '#ef4444',
+                            border: 'none',
+                            cursor: 'pointer',
+                          }}>
+                          🗑️ Clear all sales (for re-import)
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="flex gap-3 mt-6">
+                      <button
+                        onClick={() => setShowImportModal(false)}
+                        style={{
+                          flex: 1,
+                          padding: '12px 16px',
+                          borderRadius: '8px',
+                          border: 'none',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          backgroundColor: isDarkMode ? '#2d2d44' : '#e1e8ed',
+                          color: isDarkMode ? '#e8eaed' : '#2c3e50',
+                        }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
