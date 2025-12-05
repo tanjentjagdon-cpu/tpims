@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTheme } from '@/lib/themeContext';
 
 interface ImageUploadProps {
@@ -54,68 +54,99 @@ export default function ImageUpload({
 }: ImageUploadProps) {
   const { isDarkMode } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setSelectedFileName(file.name);
       onImageSelect(file);
     }
   };
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     fileInputRef.current?.click();
   };
 
   return (
     <>
       <style>{`
-        .input {
-          max-width: 190px;
-          display: none;
+        .image-upload-container {
+          width: 100%;
         }
 
         .labelFile {
           display: flex;
           flex-direction: column;
           justify-content: center;
-          width: 250px;
-          height: 190px;
+          width: 100%;
+          max-width: 250px;
+          height: 150px;
           border: 2px dashed ${isDarkMode ? '#555' : '#ccc'};
           align-items: center;
           text-align: center;
-          padding: 5px;
+          padding: 10px;
           color: ${isDarkMode ? '#e8eaed' : '#404040'};
           cursor: pointer;
           transition: all 0.3s ease;
           background: ${isDarkMode ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.5)'};
           border-radius: 10px;
+          touch-action: manipulation;
+          -webkit-tap-highlight-color: transparent;
         }
 
-        .labelFile:hover {
+        .labelFile:hover, .labelFile:active {
           border-color: ${isDarkMode ? '#7aa6f0' : '#ff69b4'};
           background: ${isDarkMode ? 'rgba(122, 166, 240, 0.1)' : 'rgba(255, 105, 180, 0.05)'};
-          transform: translateY(-2px);
         }
 
         .labelFile p {
           margin: 10px 0 0 0;
-          font-size: 14px;
+          font-size: 12px;
+        }
+
+        .labelFile .selected-file {
+          color: ${isDarkMode ? '#7aa6f0' : '#ff69b4'};
+          font-weight: 600;
+          font-size: 11px;
+          margin-top: 5px;
+          word-break: break-all;
+        }
+
+        .hidden-input {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
+          overflow: hidden;
+          clip: rect(0, 0, 0, 0);
+          white-space: nowrap;
+          border: 0;
         }
       `}</style>
 
-      <label className="labelFile" onClick={handleClick}>
-        <span>
-          <CloudUploadSVG />
-        </span>
-        <p>drag and drop your file here or click to select a file!</p>
+      <div className="image-upload-container">
         <input
           ref={fileInputRef}
-          className="input"
+          className="hidden-input"
           type="file"
           accept={accept}
           onChange={handleFileChange}
+          capture="environment"
         />
-      </label>
+        <div className="labelFile" onClick={handleClick}>
+          <span>
+            <CloudUploadSVG />
+          </span>
+          <p>Tap to select or take a photo</p>
+          {selectedFileName && (
+            <span className="selected-file">✓ {selectedFileName}</span>
+          )}
+        </div>
+      </div>
     </>
   );
 }
