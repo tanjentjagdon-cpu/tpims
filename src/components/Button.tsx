@@ -28,8 +28,8 @@ export default function Button({
 
   const baseStyle: React.CSSProperties = {
     position: 'relative',
-    padding: '12px 32px',
-    fontSize: '16px',
+    padding: '10px 20px',
+    fontSize: '13px',
     fontWeight: 700,
     textTransform: 'uppercase',
     color: isDarkMode ? '#fff' : '#000',
@@ -43,6 +43,7 @@ export default function Button({
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.7 : 1,
     display: 'inline-block',
+    whiteSpace: 'nowrap',
     ...customStyle,
   };
 
