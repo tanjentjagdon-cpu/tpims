@@ -267,10 +267,11 @@ export function parseCSVRow(row: string[], userId: string): Omit<ShopSale, 'id' 
 }
 
 // ============================================
-// PARSE ENTIRE CSV FILE
+// PARSE ENTIRE CSV FILE - Groups products by order_id
 // ============================================
 export function parseCSVFile(csvContent: string, userId: string): Omit<ShopSale, 'id' | 'created_at' | 'updated_at'>[] {
-  const sales: Omit<ShopSale, 'id' | 'created_at' | 'updated_at'>[] = [];
+  // First, parse all rows into individual products
+  const allRows: Omit<ShopSale, 'id' | 'created_at' | 'updated_at'>[] = [];
   
   // Split by lines, handling potential \r\n or \n
   const lines = csvContent.split(/\r?\n/);
@@ -285,11 +286,68 @@ export function parseCSVFile(csvContent: string, userId: string): Omit<ShopSale,
     
     const sale = parseCSVRow(row, userId);
     if (sale && sale.order_id) {
-      sales.push(sale);
+      allRows.push(sale);
     }
   }
 
-  return sales;
+  // Group by order_id
+  const orderGroups = new Map<string, Omit<ShopSale, 'id' | 'created_at' | 'updated_at'>[]>();
+  
+  for (const row of allRows) {
+    const existing = orderGroups.get(row.order_id);
+    if (existing) {
+      existing.push(row);
+    } else {
+      orderGroups.set(row.order_id, [row]);
+    }
+  }
+
+  // Merge products with same order_id
+  const mergedSales: Omit<ShopSale, 'id' | 'created_at' | 'updated_at'>[] = [];
+  
+  for (const [orderId, products] of orderGroups) {
+    if (products.length === 1) {
+      // Single product order - use as-is
+      mergedSales.push(products[0]);
+    } else {
+      // Multiple products - merge into one order
+      const firstProduct = products[0];
+      
+      // Combine product names
+      const productNames = products.map(p => p.product_name);
+      let combinedName = productNames[0];
+      if (productNames.length === 2) {
+        combinedName = `${productNames[0]}, ${productNames[1]}`;
+      } else if (productNames.length > 2) {
+        combinedName = `${productNames[0]}, ${productNames[1]} (+${productNames.length - 2} more)`;
+      }
+
+      // Sum up quantities and amounts
+      const totalQuantity = products.reduce((sum, p) => sum + p.quantity, 0);
+      const totalSubtotal = products.reduce((sum, p) => sum + p.subtotal, 0);
+      const totalItemPrice = totalSubtotal / totalQuantity; // Average price
+      
+      // Sum fees (only count once from first product to avoid double counting)
+      // Shopee fees are usually per order, not per product
+      const mergedOrder: Omit<ShopSale, 'id' | 'created_at' | 'updated_at'> = {
+        ...firstProduct,
+        product_name: combinedName,
+        quantity: totalQuantity,
+        item_price: Math.round(totalItemPrice * 100) / 100,
+        subtotal: totalSubtotal,
+        // Merchandise subtotal should be sum of all products
+        merchandise_subtotal: products.reduce((sum, p) => sum + p.merchandise_subtotal, 0),
+        // Net total - use the first row's net_total as it's usually the order total
+        net_total: firstProduct.net_total,
+        // Total buyer payment from first row
+        total_buyer_payment: firstProduct.total_buyer_payment,
+      };
+
+      mergedSales.push(mergedOrder);
+    }
+  }
+
+  return mergedSales;
 }
 
 // ============================================
