@@ -597,9 +597,17 @@ export default function CutsPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
           <div className="rounded-2xl shadow-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()} style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
-            <div className="p-6 border-b" style={{ borderColor: isDarkMode ? '#2d2d44' : '#e1e8ed' }}>
-              <h2 className="text-xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>✂️ Record Fabric Cut</h2>
-              <p className="text-sm mt-1" style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>Each cut is recorded separately</p>
+            <div className="p-6 border-b flex justify-between items-start" style={{ borderColor: isDarkMode ? '#2d2d44' : '#e1e8ed' }}>
+              <div>
+                <h2 className="text-xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>✂️ Record Fabric Cut</h2>
+                <p className="text-sm mt-1" style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>Each cut is recorded separately</p>
+              </div>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-2xl hover:opacity-70 transition-opacity"
+                style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d', cursor: 'pointer', background: 'none', border: 'none', padding: '0', lineHeight: '1' }}>
+                ✕
+              </button>
             </div>
 
             <form onSubmit={handleAddCut} className="p-6 space-y-4">

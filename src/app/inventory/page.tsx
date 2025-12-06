@@ -837,13 +837,19 @@ export default function InventoryPage() {
               if (!product) return null;
               return (
                 <>
-                  {/* Product Image */}
-                  <div className="w-full h-48 bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-6xl">
+                  {/* Product Image with Close Button */}
+                  <div className="w-full h-48 bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-6xl relative">
                     {product.image ? (
                       <img src={product.image} alt={product.productName} className="w-full h-full object-cover" />
                     ) : (
                       '📦'
                     )}
+                    <button
+                      onClick={() => setExpandedProductId(null)}
+                      className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-lg hover:opacity-80 transition-opacity"
+                      style={{ backgroundColor: 'rgba(0,0,0,0.5)', color: '#ffffff', cursor: 'pointer', border: 'none' }}>
+                      ✕
+                    </button>
                   </div>
 
                   {/* Product Details */}
@@ -1089,10 +1095,16 @@ export default function InventoryPage() {
             style={{
               backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff',
             }}>
-            <div className="p-6 border-b" style={{ borderColor: isDarkMode ? '#2d2d44' : '#e1e8ed' }}>
+            <div className="p-6 border-b flex justify-between items-center" style={{ borderColor: isDarkMode ? '#2d2d44' : '#e1e8ed' }}>
               <h2 className="text-xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
                 ⚠️ Delete Product?
               </h2>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="text-2xl hover:opacity-70 transition-opacity"
+                style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d', cursor: 'pointer', background: 'none', border: 'none', padding: '0', lineHeight: '1' }}>
+                ✕
+              </button>
             </div>
 
             <div className="p-6">

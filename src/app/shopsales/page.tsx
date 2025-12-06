@@ -2007,10 +2007,18 @@ export default function ShopSalesPage() {
                         className="p-6 flex-shrink-0"
                         style={{ backgroundColor: isDarkMode ? '#2d2d44' : '#efe5f0', borderBottom: `1px solid ${isDarkMode ? '#3d3d54' : '#e1e8ed'}` }}>
                         <div className="flex items-center justify-between mb-3">
-                          <h2 className="text-2xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
+                          <h2 className="text-2xl font-bold flex-1 pr-4" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
                             {sale.productName}
                           </h2>
-                          <span className="text-3xl">{shopInfo.icon}</span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-3xl">{shopInfo.icon}</span>
+                            <button
+                              onClick={() => setExpandedSaleId(null)}
+                              className="text-2xl hover:opacity-70 transition-opacity"
+                              style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d', cursor: 'pointer', background: 'none', border: 'none', padding: '0', lineHeight: '1' }}>
+                              ✕
+                            </button>
+                          </div>
                         </div>
                         <div className="text-sm" style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>
                           Order ID: {sale.id}
@@ -2307,10 +2315,16 @@ export default function ShopSalesPage() {
               style={{
                 backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff',
               }}>
-              <div className="p-6 border-b" style={{ borderColor: isDarkMode ? '#2d2d44' : '#e1e8ed' }}>
+              <div className="p-6 border-b flex justify-between items-center" style={{ borderColor: isDarkMode ? '#2d2d44' : '#e1e8ed' }}>
                 <h2 className="text-xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
                   ⚠️ Delete Sale?
                 </h2>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="text-2xl hover:opacity-70 transition-opacity"
+                  style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d', cursor: 'pointer', background: 'none', border: 'none', padding: '0', lineHeight: '1' }}>
+                  ✕
+                </button>
               </div>
 
               <div className="p-6">

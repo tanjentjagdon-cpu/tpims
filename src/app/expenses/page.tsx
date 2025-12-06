@@ -648,10 +648,19 @@ export default function ExpensesPage() {
               style={{
                 backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff',
               }}>
-              <div className="p-4 md:p-8 border-b" style={{ borderColor: isDarkMode ? '#2d2d44' : '#e1e8ed' }}>
+              <div className="p-4 md:p-8 border-b flex justify-between items-center" style={{ borderColor: isDarkMode ? '#2d2d44' : '#e1e8ed' }}>
                 <h2 className="text-xl md:text-3xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
                   {editingExpenseId ? '✏️ Edit Expense' : '➕ Add Expense'}
                 </h2>
+                <button
+                  onClick={() => {
+                    setShowModal(false);
+                    setEditingExpenseId(null);
+                  }}
+                  className="text-2xl hover:opacity-70 transition-opacity"
+                  style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d', cursor: 'pointer', background: 'none', border: 'none', padding: '0', lineHeight: '1' }}>
+                  ✕
+                </button>
               </div>
 
               <form
@@ -880,10 +889,16 @@ export default function ExpensesPage() {
               style={{
                 backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff',
               }}>
-              <div className="p-6 border-b" style={{ borderColor: isDarkMode ? '#2d2d44' : '#e1e8ed' }}>
+              <div className="p-6 border-b flex justify-between items-center" style={{ borderColor: isDarkMode ? '#2d2d44' : '#e1e8ed' }}>
                 <h2 className="text-xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
                   ⚠️ Delete Expense?
                 </h2>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="text-2xl hover:opacity-70 transition-opacity"
+                  style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d', cursor: 'pointer', background: 'none', border: 'none', padding: '0', lineHeight: '1' }}>
+                  ✕
+                </button>
               </div>
 
               <div className="p-6">

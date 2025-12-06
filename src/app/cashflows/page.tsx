@@ -563,9 +563,17 @@ export default function CashFlowsPage() {
                     <>
                       {/* Detail Content */}
                       <div className="p-6">
-                        <h2 className="text-2xl font-bold mb-4" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
-                          {cf.description}
-                        </h2>
+                        <div className="flex justify-between items-start mb-4">
+                          <h2 className="text-2xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
+                            {cf.description}
+                          </h2>
+                          <button
+                            onClick={() => setExpandedCashflowId(null)}
+                            className="text-2xl hover:opacity-70 transition-opacity"
+                            style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d', cursor: 'pointer', background: 'none', border: 'none', padding: '0', lineHeight: '1' }}>
+                            ✕
+                          </button>
+                        </div>
 
                         <div className="space-y-3 mb-6 pb-6" style={{ borderBottom: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
                           <div className="flex justify-between items-center">
@@ -799,10 +807,16 @@ export default function CashFlowsPage() {
               style={{
                 backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff',
               }}>
-              <div className="p-6 border-b" style={{ borderColor: isDarkMode ? '#2d2d44' : '#e1e8ed' }}>
+              <div className="p-6 border-b flex justify-between items-center" style={{ borderColor: isDarkMode ? '#2d2d44' : '#e1e8ed' }}>
                 <h2 className="text-xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
-                  ⚠️ Delete CashFlow?
+                  ⚠️ Delete Cashflow?
                 </h2>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="text-2xl hover:opacity-70 transition-opacity"
+                  style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d', cursor: 'pointer', background: 'none', border: 'none', padding: '0', lineHeight: '1' }}>
+                  ✕
+                </button>
               </div>
 
               <div className="p-6">
