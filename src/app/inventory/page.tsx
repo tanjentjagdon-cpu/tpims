@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useTheme } from '@/lib/themeContext';
 import * as inventoryService from '@/lib/inventoryService';
+import * as imageService from '@/lib/imageService';
 import Loader from '@/components/Loader';
 import Button from '@/components/Button';
 import ImageUpload from '@/components/ImageUpload';
@@ -203,13 +204,25 @@ export default function InventoryPage() {
         ));
         alert(`Quantity added! Total: ${newQty} units`);
       } else {
+        // Upload image if provided
+        let imageUrl: string | null = null;
+        if (formData.image) {
+          const uploadResult = await imageService.uploadImage(formData.image);
+          if (uploadResult.success && uploadResult.url) {
+            imageUrl = uploadResult.url;
+          } else {
+            console.warn('Image upload failed:', uploadResult.error);
+            // Continue without image
+          }
+        }
+
         // Create new product in Supabase
         const savedProduct = await inventoryService.saveProduct(user.id, {
           productName: formData.productName,
           category: formData.category,
           type: formData.type,
           quantity: parseInt(formData.quantity),
-          image: formData.image ? URL.createObjectURL(formData.image) : null,
+          image: imageUrl,
         });
 
         // Add to local state with formatted response
