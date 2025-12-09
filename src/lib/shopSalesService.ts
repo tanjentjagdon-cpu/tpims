@@ -422,3 +422,67 @@ export async function getSalesSummary(userId: string) {
 
   return summary;
 }
+
+// ============================================
+// EXPORT SALES TO EXCEL (via Render backend)
+// ============================================
+export async function exportSalesToExcel(
+  sales: ShopSale[], 
+  template: 'default' | 'bir' | 'summary' = 'default',
+  filename: string = 'sales_export'
+): Promise<void> {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://tpimis-backend.onrender.com';
+  
+  // Transform sales data for export
+  const exportData = sales.map(sale => ({
+    orderId: sale.order_id,
+    orderDate: sale.order_date,
+    shop: sale.shop,
+    buyerName: sale.buyer_name || '',
+    productName: sale.product_name,
+    quantity: sale.quantity,
+    unitPrice: sale.item_price,
+    subtotal: sale.subtotal,
+    shippingFee: sale.shipping_fee || 0,
+    serviceFee: sale.service_fee || 0,
+    transactionFee: sale.transaction_fee || 0,
+    tax: sale.tax || 0,
+    netTotal: sale.net_total,
+    status: sale.status,
+    incomeStatus: sale.income_status,
+    totalAmount: sale.subtotal,
+  }));
+
+  try {
+    const response = await fetch(`${API_URL}/api/excel/export`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        data: exportData,
+        template,
+        filename,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    // Download the file
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+}
+

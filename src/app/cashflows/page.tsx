@@ -31,6 +31,8 @@ export default function CashFlowsPage() {
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [alertMessage, setAlertMessage] = useState<{message: string; type: 'success' | 'error'} | null>(null);
   const [formData, setFormData] = useState({
     description: '',
     type: 'income' as 'income' | 'expense',
@@ -83,6 +85,59 @@ export default function CashFlowsPage() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Export cashflows to Excel
+  const handleExport = async () => {
+    if (cashflows.length === 0) {
+      setAlertMessage({ message: 'No cashflows to export', type: 'error' });
+      setTimeout(() => setAlertMessage(null), 3000);
+      return;
+    }
+
+    setExportLoading(true);
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://tpimis-backend.onrender.com';
+      
+      const exportData = cashflows.map(cf => ({
+        date: cf.date,
+        description: cf.description,
+        type: cf.type,
+        category: cf.category,
+        amount: cf.amount,
+        notes: cf.notes || '',
+      }));
+
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `TelaPhoria_CashFlows_${dateStr}`;
+
+      const response = await fetch(`${API_URL}/api/excel/export`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: exportData, template: 'default', filename }),
+      });
+
+      if (!response.ok) throw new Error('Export failed');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${filename}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setAlertMessage({ message: '✅ Export successful!', type: 'success' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    } catch (error) {
+      console.error('Export error:', error);
+      setAlertMessage({ message: 'Export failed. Please try again.', type: 'error' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    } finally {
+      setExportLoading(false);
+    }
+  };
 
   if (!mounted) {
     return null;
@@ -451,14 +506,39 @@ export default function CashFlowsPage() {
 
         <div className="flex-1 w-full p-6 md:p-8 overflow-auto" style={{ backgroundColor: isDarkMode ? '#0f0f1e' : '#fff0f5', marginTop: '70px' }}>
           <div className="max-w-6xl mx-auto">
+            {/* Alert */}
+            {alertMessage && (
+              <div 
+                className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:bottom-6 z-50 p-3 rounded-lg flex items-center gap-2 shadow-lg"
+                style={{
+                  backgroundColor: alertMessage.type === 'success' ? (isDarkMode ? '#1a3a1a' : '#dcfce7') : (isDarkMode ? '#3a1a1a' : '#fee2e2'),
+                  border: `1px solid ${alertMessage.type === 'success' ? (isDarkMode ? '#15803d' : '#86efac') : (isDarkMode ? '#7c2d2d' : '#fecaca')}`,
+                }}>
+                <span>{alertMessage.type === 'success' ? '✅' : '❌'}</span>
+                <p style={{ color: alertMessage.type === 'success' ? (isDarkMode ? '#86efac' : '#15803d') : (isDarkMode ? '#fca5a5' : '#991b1b'), fontWeight: '600', fontSize: '13px' }}>
+                  {alertMessage.message}
+                </p>
+                <button onClick={() => setAlertMessage(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
+              </div>
+            )}
+
             {/* Add Button */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-            <Button 
-              onClick={() => setShowModal(true)}
-              variant="secondary"
-            >
-              Add Cashflow
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setShowModal(true)}
+                variant="secondary"
+              >
+                Add Cashflow
+              </Button>
+              <Button
+                onClick={handleExport}
+                variant="secondary"
+                disabled={exportLoading || cashflows.length === 0}
+              >
+                {exportLoading ? '⏳...' : '📤 Export'}
+              </Button>
+            </div>
           </div>
 
           {/* Search and Filter */}

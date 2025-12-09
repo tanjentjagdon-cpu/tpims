@@ -33,6 +33,7 @@ export default function ExpensesPage() {
   const [filterType, setFilterType] = useState<string>('All');
   const [alertMessage, setAlertMessage] = useState<{message: string; type: 'success' | 'error'} | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
   
   const [formData, setFormData] = useState<{
     date: string;
@@ -98,6 +99,59 @@ export default function ExpensesPage() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Export expenses to Excel
+  const handleExport = async () => {
+    if (expenses.length === 0) {
+      setAlertMessage({ message: 'No expenses to export', type: 'error' });
+      setTimeout(() => setAlertMessage(null), 3000);
+      return;
+    }
+
+    setExportLoading(true);
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://tpimis-backend.onrender.com';
+      
+      const exportData = expenses.map(exp => ({
+        date: exp.date,
+        name: exp.name,
+        type: exp.type,
+        fee: exp.fee,
+        deliveryFee: exp.deliveryFee || 0,
+        total: exp.total,
+      }));
+
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `TelaPhoria_Expenses_${dateStr}`;
+
+      const response = await fetch(`${API_URL}/api/excel/export`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: exportData, template: 'default', filename }),
+      });
+
+      if (!response.ok) throw new Error('Export failed');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${filename}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setAlertMessage({ message: '✅ Export successful!', type: 'success' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    } catch (error) {
+      console.error('Export error:', error);
+      setAlertMessage({ message: 'Export failed. Please try again.', type: 'error' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    } finally {
+      setExportLoading(false);
+    }
+  };
 
   // Filter expenses based on search term and type
   const filteredExpenses = expenses.filter(expense => {
@@ -531,6 +585,13 @@ export default function ExpensesPage() {
                   variant="secondary"
                 >
                   Add Expense
+                </Button>
+                <Button
+                  onClick={handleExport}
+                  variant="secondary"
+                  disabled={exportLoading || expenses.length === 0}
+                >
+                  {exportLoading ? '⏳...' : '📤 Export'}
                 </Button>
               </div>
 

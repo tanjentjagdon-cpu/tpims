@@ -98,6 +98,9 @@ export default function ShopSalesPage() {
   const [importLoading, setImportLoading] = useState(false);
   const [importProgress, setImportProgress] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Export state
+  const [exportLoading, setExportLoading] = useState(false);
 
   // Sales data - loaded from Supabase
   const [sales, setSales] = useState<Sale[]>([]);
@@ -235,6 +238,66 @@ export default function ShopSalesPage() {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    }
+  };
+
+  // Export handler
+  const handleExport = async (template: 'default' | 'bir' | 'summary' = 'default') => {
+    if (!user || sales.length === 0) {
+      setAlertMessage({ message: 'No sales data to export', type: 'error' });
+      setTimeout(() => setAlertMessage(null), 3000);
+      return;
+    }
+
+    setExportLoading(true);
+    try {
+      // Convert UI sales format back to ShopSale format for export
+      const salesForExport = sales.map(sale => ({
+        id: sale.id,
+        user_id: user.id,
+        order_id: sale.id,
+        shop: sale.shop,
+        order_date: sale.date,
+        buyer_name: sale.buyerName,
+        buyer_contact: sale.contactNo,
+        buyer_address: sale.address,
+        product_name: sale.productName,
+        item_price: sale.unitPrice,
+        quantity: sale.quantity,
+        subtotal: sale.total,
+        shipping_fee_buyer: sale.shippingFeePaidByBuyer || 0,
+        shipping_fee_charged: sale.estimatedShippingFeeCharged || 0,
+        shipping_fee_rebate: sale.shippingFeeRebate || 0,
+        service_fee: sale.serviceFee || 0,
+        transaction_fee: sale.transactionFee || 0,
+        tax: sale.tax || 0,
+        net_total: sale.total - (sale.serviceFee || 0) - (sale.transactionFee || 0) - (sale.tax || 0),
+        merchandise_subtotal: sale.merchandiseSubtotal || sale.total,
+        shipping_fee: sale.shippingFee || 0,
+        shopee_voucher: sale.shopeeVoucher || 0,
+        seller_voucher: sale.sellerVoucher || 0,
+        payment_discount: sale.paymentDiscount || 0,
+        shopee_coin_redeem: sale.shopeeCoinRedeem || 0,
+        total_buyer_payment: sale.totalBuyerPayment || sale.total,
+        status: sale.status || 'Delivered',
+        released_date: sale.releasedDate,
+        released_time: sale.releasedTime,
+        income_status: sale.incomeStatus || 'Released',
+      }));
+
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `TelaPhoria_Sales_${template}_${dateStr}`;
+      
+      await shopSalesService.exportSalesToExcel(salesForExport as any, template, filename);
+      
+      setAlertMessage({ message: `✅ Export successful! Check your downloads.`, type: 'success' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    } catch (error) {
+      console.error('Export error:', error);
+      setAlertMessage({ message: 'Export failed. Please try again.', type: 'error' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    } finally {
+      setExportLoading(false);
     }
   };
 
@@ -1088,6 +1151,13 @@ export default function ShopSalesPage() {
               </Button>
               <Button onClick={() => setShowImportModal(true)} variant="secondary">
                 📥 Import CSV
+              </Button>
+              <Button 
+                onClick={() => handleExport('default')} 
+                variant="secondary"
+                disabled={exportLoading || sales.length === 0}
+              >
+                {exportLoading ? '⏳ Exporting...' : '📤 Export Excel'}
               </Button>
             </div>
 

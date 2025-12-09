@@ -380,14 +380,34 @@ export default function CutsPage() {
             <p style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>Track fabric cuts and manage returned parcels</p>
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-2 mb-6">
-            <button onClick={() => setActiveTab('cuts')} className="px-4 py-2 rounded-lg font-medium transition-all"
-              style={{ backgroundColor: activeTab === 'cuts' ? '#ff69b4' : (isDarkMode ? '#2d2d44' : '#e8dce8'), color: activeTab === 'cuts' ? '#fff' : (isDarkMode ? '#e8eaed' : '#2c3e50'), border: 'none', cursor: 'pointer' }}>
+          {/* Tabs - Improved Design */}
+          <div className="flex gap-3 mb-6 p-1 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff', border: `1px solid ${isDarkMode ? '#2d2d44' : '#d1c4d1'}`, display: 'inline-flex' }}>
+            <button 
+              type="button"
+              onClick={() => setActiveTab('cuts')} 
+              className="px-5 py-3 rounded-lg font-semibold transition-all duration-200"
+              style={{ 
+                backgroundColor: activeTab === 'cuts' ? '#ff69b4' : 'transparent', 
+                color: activeTab === 'cuts' ? '#ffffff' : (isDarkMode ? '#9aa0a6' : '#7f8c8d'), 
+                border: 'none', 
+                cursor: 'pointer',
+                fontSize: '14px',
+                boxShadow: activeTab === 'cuts' ? '0 2px 8px rgba(255, 105, 180, 0.4)' : 'none'
+              }}>
               ✂️ Fabric Cuts ({cuts.length})
             </button>
-            <button onClick={() => setActiveTab('returns')} className="px-4 py-2 rounded-lg font-medium transition-all"
-              style={{ backgroundColor: activeTab === 'returns' ? '#ff69b4' : (isDarkMode ? '#2d2d44' : '#e8dce8'), color: activeTab === 'returns' ? '#fff' : (isDarkMode ? '#e8eaed' : '#2c3e50'), border: 'none', cursor: 'pointer' }}>
+            <button 
+              type="button"
+              onClick={() => setActiveTab('returns')} 
+              className="px-5 py-3 rounded-lg font-semibold transition-all duration-200"
+              style={{ 
+                backgroundColor: activeTab === 'returns' ? '#ff69b4' : 'transparent', 
+                color: activeTab === 'returns' ? '#ffffff' : (isDarkMode ? '#9aa0a6' : '#7f8c8d'), 
+                border: 'none', 
+                cursor: 'pointer',
+                fontSize: '14px',
+                boxShadow: activeTab === 'returns' ? '0 2px 8px rgba(255, 105, 180, 0.4)' : 'none'
+              }}>
               📦 Returned Parcels ({pendingReturns.length})
             </button>
           </div>

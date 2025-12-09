@@ -84,6 +84,7 @@ export default function InventoryPage() {
   const [alertMessage, setAlertMessage] = useState<{message: string; type: 'success' | 'error'} | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [exportLoading, setExportLoading] = useState(false);
 
   // Compute available types based on selected category
   const availableTypes = formData.category ? Object.keys(catalogData[formData.category as keyof typeof catalogData] || {}) : [];
@@ -258,6 +259,58 @@ export default function InventoryPage() {
       console.error('Error deleting product:', error);
       setAlertMessage({ message: 'Error deleting product', type: 'error' });
       setTimeout(() => setAlertMessage(null), 3000);
+    }
+  };
+
+  // Export inventory to Excel
+  const handleExport = async () => {
+    if (products.length === 0) {
+      setAlertMessage({ message: 'No products to export', type: 'error' });
+      setTimeout(() => setAlertMessage(null), 3000);
+      return;
+    }
+
+    setExportLoading(true);
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://tpimis-backend.onrender.com';
+      
+      const exportData = products.map(p => ({
+        productName: p.productName,
+        category: p.category,
+        type: p.type,
+        quantity: p.quantity,
+        createdAt: p.createdAt,
+      }));
+
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `TelaPhoria_Inventory_${dateStr}`;
+
+      const response = await fetch(`${API_URL}/api/excel/export`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: exportData, template: 'default', filename }),
+      });
+
+      if (!response.ok) throw new Error('Export failed');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${filename}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setAlertMessage({ message: '✅ Export successful!', type: 'success' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    } catch (error) {
+      console.error('Export error:', error);
+      setAlertMessage({ message: 'Export failed. Please try again.', type: 'error' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    } finally {
+      setExportLoading(false);
     }
   };
 
@@ -757,6 +810,13 @@ export default function InventoryPage() {
               variant="secondary"
             >
               Add Product
+            </Button>
+            <Button
+              onClick={handleExport}
+              variant="secondary"
+              disabled={exportLoading || products.length === 0}
+            >
+              {exportLoading ? '⏳...' : '📤 Export'}
             </Button>
           </div>
 
