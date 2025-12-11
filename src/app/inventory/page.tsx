@@ -884,13 +884,14 @@ export default function InventoryPage() {
                   {/* Mobile Carousel */}
                   <div className="md:hidden">
                     <div className="relative">
-                      <div className="overflow-x-auto snap-x snap-mandatory scrollbar-hide" 
+                      <div className="overflow-x-auto snap-x snap-mandatory" 
                         style={{
                           scrollBehavior: 'smooth',
+                          overscrollBehaviorX: 'contain',
                         }}>
                         <div className="flex gap-4 pb-4 px-6" style={{ width: 'max-content' }}>
                           {groupProducts.map((product) => (
-                            <div key={product.id} className="snap-start flex-shrink-0" style={{ width: '100%' }}>
+                            <div key={product.id} className="snap-start flex-shrink-0" style={{ width: 'calc(100vw - 48px)' }}>
                               <ProductCard 
                                 product={product}
                                 isDarkMode={isDarkMode}
