@@ -822,36 +822,44 @@ export default function InventoryPage() {
         </header>
 
         {/* Dashboard Content */}
-        <div className="flex-1 w-full p-6 md:p-8 overflow-y-auto" style={{ backgroundColor: isDarkMode ? '#0f0f1e' : '#fff0f5', marginTop: '70px', overflowX: 'hidden' }}>
-          <div className="max-w-6xl mx-auto">
-            {/* Search Bar and Add Product Button */}
-          <div className="flex flex-col md:flex-row gap-4 mb-8">
-            <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#efe5f0', border: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
-              <span className="text-lg">🔍</span>
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 bg-transparent outline-none"
-                style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}
-              />
+        <div className="flex-1 w-full p-0 md:p-8 overflow-y-auto" style={{ backgroundColor: isDarkMode ? '#0f0f1e' : '#fff0f5', marginTop: '70px', overflowX: 'hidden' }}>
+          {/* Sticky Toolbar */}
+          <div className="sticky top-0 z-30 w-full" style={{ backgroundColor: isDarkMode ? '#0f0f1e' : '#fff0f5', borderBottom: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
+            <div className="max-w-6xl mx-auto px-6 py-4">
+              <div className="flex flex-col md:flex-row gap-3 md:gap-4">
+                <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#efe5f0', border: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
+                  <span className="text-lg">🔍</span>
+                  <input
+                    type="search"
+                    placeholder="Search products..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="flex-1 bg-transparent outline-none"
+                    style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}
+                  />
+                </div>
+                <div className="flex gap-3 md:gap-4">
+                  <Button 
+                    onClick={() => setShowModal(true)}
+                    variant="secondary"
+                    className="w-full md:w-auto"
+                  >
+                    Add Product
+                  </Button>
+                  <Button
+                    onClick={handleExport}
+                    variant="secondary"
+                    disabled={exportLoading || products.length === 0}
+                    className="w-full md:w-auto"
+                  >
+                    {exportLoading ? '⏳...' : '📤 Export'}
+                  </Button>
+                </div>
+              </div>
             </div>
-            
-            <Button 
-              onClick={() => setShowModal(true)}
-              variant="secondary"
-            >
-              Add Product
-            </Button>
-            <Button
-              onClick={handleExport}
-              variant="secondary"
-              disabled={exportLoading || products.length === 0}
-            >
-              {exportLoading ? '⏳...' : '📤 Export'}
-            </Button>
           </div>
+
+          <div className="max-w-6xl mx-auto px-6 md:px-0 py-6 md:py-0">
 
           {/* Products Grid - Grouped by Type with Mobile Carousel */}
           {filteredProducts.length > 0 ? (
@@ -986,8 +994,8 @@ export default function InventoryPage() {
             })()}
       </Modal>
 
-      {/* Add Product Modal */}
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
+      {/* Add / Edit Product Modal */}
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} contentClassName="max-w-lg" style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
             {/* Modal Header - Fixed */}
             <div className="flex justify-between items-center p-4 md:p-6 flex-shrink-0" style={{ borderBottom: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
               <h2 className="text-xl md:text-2xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
