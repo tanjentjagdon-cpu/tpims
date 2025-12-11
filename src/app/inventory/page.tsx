@@ -92,6 +92,7 @@ export default function InventoryPage() {
   const [showQuickPrintedModal, setShowQuickPrintedModal] = useState(false);
   const [quickAddQtyMap, setQuickAddQtyMap] = useState<{[name: string]: string}>({});
   const [showQuickPlainModal, setShowQuickPlainModal] = useState(false);
+  const [bulkAdding, setBulkAdding] = useState(false);
   const [alertMessage, setAlertMessage] = useState<{message: string; type: 'success' | 'error'} | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
@@ -459,6 +460,49 @@ export default function InventoryPage() {
       console.error('Error quick-adding plain:', error);
       setAlertMessage({ message: 'Operation failed. Please try again.', type: 'error' });
       setTimeout(() => setAlertMessage(null), 3000);
+    }
+  };
+
+  const handleBulkAddCatalog = async (catalogType: 'Plain' | 'Printed') => {
+    try {
+      if (!user) {
+        setAlertMessage({ message: 'User not authenticated', type: 'error' });
+        setTimeout(() => setAlertMessage(null), 2000);
+        return;
+      }
+      setBulkAdding(true);
+      const names: string[] = ((catalogData['Geena Cloth'] as any)[catalogType] as string[]) || [];
+      let created = 0;
+      for (const name of names) {
+        const exists = products.some(p => p.category === 'Geena Cloth' && p.type === catalogType && p.productName === name);
+        if (exists) continue;
+        const saved = await inventoryService.saveProduct(user.id, {
+          productName: name,
+          category: 'Geena Cloth',
+          type: catalogType,
+          quantity: 0,
+          image: null,
+        });
+        const newProduct: Product = {
+          id: saved.id,
+          productName: saved.product_name,
+          category: saved.category,
+          type: saved.type,
+          quantity: saved.quantity,
+          image: saved.image_url,
+          createdAt: saved.created_at,
+        };
+        setProducts(prev => [...prev, newProduct]);
+        created++;
+      }
+      setAlertMessage({ message: `Added ${created} ${catalogType} products`, type: 'success' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    } catch (error) {
+      console.error('Bulk add error:', error);
+      setAlertMessage({ message: 'Bulk add failed. Try again.', type: 'error' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    } finally {
+      setBulkAdding(false);
     }
   };
 
@@ -957,14 +1001,24 @@ export default function InventoryPage() {
                       {groupProducts.length}
                     </span>
                     {type === 'Plain' && (
-                      <Button onClick={() => setShowQuickPlainModal(true)} variant="secondary">
-                        Quick Add Plain
-                      </Button>
+                      <>
+                        <Button onClick={() => setShowQuickPlainModal(true)} variant="secondary">
+                          Quick Add Plain
+                        </Button>
+                        <Button onClick={() => handleBulkAddCatalog('Plain')} variant="secondary" style={{ marginLeft: '8px' }} disabled={bulkAdding}>
+                          {bulkAdding ? 'Adding…' : 'Add All Plain'}
+                        </Button>
+                      </>
                     )}
                     {type === 'Printed' && (
-                      <Button onClick={() => setShowQuickPrintedModal(true)} variant="secondary">
-                        Quick Add Printed
-                      </Button>
+                      <>
+                        <Button onClick={() => setShowQuickPrintedModal(true)} variant="secondary">
+                          Quick Add Printed
+                        </Button>
+                        <Button onClick={() => handleBulkAddCatalog('Printed')} variant="secondary" style={{ marginLeft: '8px' }} disabled={bulkAdding}>
+                          {bulkAdding ? 'Adding…' : 'Add All Printed'}
+                        </Button>
+                      </>
                     )}
                   </div>
 
@@ -1332,10 +1386,10 @@ export default function InventoryPage() {
                     border: `1px solid ${isDarkMode ? '#3d3d54' : '#e1e8ed'}`,
                   }}
                 />
-                <Button onClick={() => handleQuickAddPlain(name, parseInt(quickAddQtyMap[name] || '0'))} variant="secondary">Add</Button>
-                <Button onClick={() => handleQuickAddPlain(name, 50)} variant="secondary">+50</Button>
-                <Button onClick={() => handleQuickAddPlain(name, 100)} variant="secondary">+100</Button>
-                <Button onClick={() => handleQuickAddPlain(name, 150)} variant="secondary">+150</Button>
+                <Button onClick={() => handleQuickAddPrinted(name, parseInt(quickAddQtyMap[name] || '0'))} variant="secondary">Add</Button>
+                <Button onClick={() => handleQuickAddPrinted(name, 50)} variant="secondary">+50</Button>
+                <Button onClick={() => handleQuickAddPrinted(name, 100)} variant="secondary">+100</Button>
+                <Button onClick={() => handleQuickAddPrinted(name, 150)} variant="secondary">+150</Button>
               </div>
             );
           })}
@@ -1370,10 +1424,10 @@ export default function InventoryPage() {
                     border: `1px solid ${isDarkMode ? '#3d3d54' : '#e1e8ed'}`,
                   }}
                 />
-                <Button onClick={() => handleQuickAddPrinted(name, parseInt(quickAddQtyMap[name] || '0'))} variant="secondary">Add</Button>
-                <Button onClick={() => handleQuickAddPrinted(name, 50)} variant="secondary">+50</Button>
-                <Button onClick={() => handleQuickAddPrinted(name, 100)} variant="secondary">+100</Button>
-                <Button onClick={() => handleQuickAddPrinted(name, 150)} variant="secondary">+150</Button>
+                <Button onClick={() => handleQuickAddPlain(name, parseInt(quickAddQtyMap[name] || '0'))} variant="secondary">Add</Button>
+                <Button onClick={() => handleQuickAddPlain(name, 50)} variant="secondary">+50</Button>
+                <Button onClick={() => handleQuickAddPlain(name, 100)} variant="secondary">+100</Button>
+                <Button onClick={() => handleQuickAddPlain(name, 150)} variant="secondary">+150</Button>
               </div>
             );
           })}
