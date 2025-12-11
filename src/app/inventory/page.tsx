@@ -89,11 +89,6 @@ export default function InventoryPage() {
     image: null as File | null,
   });
   const [addQuantity, setAddQuantity] = useState('');
-  const [showQuickPrintedModal, setShowQuickPrintedModal] = useState(false);
-  const [quickAddQtyMap, setQuickAddQtyMap] = useState<{[name: string]: string}>({});
-  const [showQuickPlainModal, setShowQuickPlainModal] = useState(false);
-  const [bulkAdding, setBulkAdding] = useState(false);
-  const [initializingCatalog, setInitializingCatalog] = useState(false);
   const [alertMessage, setAlertMessage] = useState<{message: string; type: 'success' | 'error'} | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
@@ -376,181 +371,6 @@ export default function InventoryPage() {
     }
   };
 
-  const handleQuickAddPrinted = async (name: string, amount: number) => {
-    try {
-      if (!user) return;
-      const increment = Math.max(0, Math.floor(amount || 0));
-      if (!increment) {
-        setAlertMessage({ message: 'Enter a valid quantity', type: 'error' });
-        setTimeout(() => setAlertMessage(null), 2000);
-        return;
-      }
-      const existingProduct = products.find(p => p.category === 'Geena Cloth' && p.type === 'Printed' && p.productName === name);
-      if (existingProduct) {
-        const newQty = (existingProduct.quantity || 0) + increment;
-        await inventoryService.updateProductQuantity(existingProduct.id, newQty);
-        setProducts(products.map(p => p.id === existingProduct.id ? { ...p, quantity: newQty } : p));
-        setAlertMessage({ message: `Added ${increment} to ${name}. Total: ${newQty}`, type: 'success' });
-      } else {
-        const saved = await inventoryService.saveProduct(user.id, {
-          productName: name,
-          category: 'Geena Cloth',
-          type: 'Printed',
-          quantity: increment,
-          image: null,
-        });
-        const newProduct: Product = {
-          id: saved.id,
-          productName: saved.product_name,
-          category: saved.category,
-          type: saved.type,
-          quantity: saved.quantity,
-          image: saved.image_url,
-          createdAt: saved.created_at,
-        };
-        setProducts([...products, newProduct]);
-        setAlertMessage({ message: `Created ${name} with ${increment} qty`, type: 'success' });
-      }
-      setTimeout(() => setAlertMessage(null), 3000);
-      setQuickAddQtyMap(prev => ({ ...prev, [name]: '' }));
-    } catch (error) {
-      console.error('Error quick-adding printed:', error);
-      setAlertMessage({ message: 'Operation failed. Please try again.', type: 'error' });
-      setTimeout(() => setAlertMessage(null), 3000);
-    }
-  };
-
-  const handleQuickAddPlain = async (name: string, amount: number) => {
-    try {
-      if (!user) return;
-      const increment = Math.max(0, Math.floor(amount || 0));
-      if (!increment) {
-        setAlertMessage({ message: 'Enter a valid quantity', type: 'error' });
-        setTimeout(() => setAlertMessage(null), 2000);
-        return;
-      }
-      const existingProduct = products.find(p => p.category === 'Geena Cloth' && p.type === 'Plain' && p.productName === name);
-      if (existingProduct) {
-        const newQty = (existingProduct.quantity || 0) + increment;
-        await inventoryService.updateProductQuantity(existingProduct.id, newQty);
-        setProducts(products.map(p => p.id === existingProduct.id ? { ...p, quantity: newQty } : p));
-        setAlertMessage({ message: `Added ${increment} to ${name}. Total: ${newQty}`, type: 'success' });
-      } else {
-        const saved = await inventoryService.saveProduct(user.id, {
-          productName: name,
-          category: 'Geena Cloth',
-          type: 'Plain',
-          quantity: increment,
-          image: null,
-        });
-        const newProduct: Product = {
-          id: saved.id,
-          productName: saved.product_name,
-          category: saved.category,
-          type: saved.type,
-          quantity: saved.quantity,
-          image: saved.image_url,
-          createdAt: saved.created_at,
-        };
-        setProducts([...products, newProduct]);
-        setAlertMessage({ message: `Created ${name} with ${increment} qty`, type: 'success' });
-      }
-      setTimeout(() => setAlertMessage(null), 3000);
-      setQuickAddQtyMap(prev => ({ ...prev, [name]: '' }));
-    } catch (error) {
-      console.error('Error quick-adding plain:', error);
-      setAlertMessage({ message: 'Operation failed. Please try again.', type: 'error' });
-      setTimeout(() => setAlertMessage(null), 3000);
-    }
-  };
-
-  const handleBulkAddCatalog = async (catalogType: 'Plain' | 'Printed') => {
-    try {
-      if (!user) {
-        setAlertMessage({ message: 'User not authenticated', type: 'error' });
-        setTimeout(() => setAlertMessage(null), 2000);
-        return;
-      }
-      setBulkAdding(true);
-      const names: string[] = ((catalogData['Geena Cloth'] as any)[catalogType] as string[]) || [];
-      let created = 0;
-      for (const name of names) {
-        const exists = products.some(p => p.category === 'Geena Cloth' && p.type === catalogType && p.productName === name);
-        if (exists) continue;
-        const saved = await inventoryService.saveProduct(user.id, {
-          productName: name,
-          category: 'Geena Cloth',
-          type: catalogType,
-          quantity: 0,
-          image: null,
-        });
-        const newProduct: Product = {
-          id: saved.id,
-          productName: saved.product_name,
-          category: saved.category,
-          type: saved.type,
-          quantity: saved.quantity,
-          image: saved.image_url,
-          createdAt: saved.created_at,
-        };
-        setProducts(prev => [...prev, newProduct]);
-        created++;
-      }
-      setAlertMessage({ message: `Added ${created} ${catalogType} products`, type: 'success' });
-      setTimeout(() => setAlertMessage(null), 3000);
-    } catch (error) {
-      console.error('Bulk add error:', error);
-      setAlertMessage({ message: 'Bulk add failed. Try again.', type: 'error' });
-      setTimeout(() => setAlertMessage(null), 3000);
-    } finally {
-      setBulkAdding(false);
-    }
-  };
-
-  const handleInitializeAllCatalog = async () => {
-    try {
-      if (!user) {
-        setAlertMessage({ message: 'User not authenticated', type: 'error' });
-        setTimeout(() => setAlertMessage(null), 2000);
-        return;
-      }
-      setInitializingCatalog(true);
-      let createdTotal = 0;
-      for (const catalogType of ['Plain', 'Printed'] as const) {
-        const names: string[] = ((catalogData['Geena Cloth'] as any)[catalogType] as string[]) || [];
-        for (const name of names) {
-          const exists = products.some(p => p.category === 'Geena Cloth' && p.type === catalogType && p.productName === name);
-          if (exists) continue;
-          const saved = await inventoryService.saveProduct(user.id, {
-            productName: name,
-            category: 'Geena Cloth',
-            type: catalogType,
-            quantity: 0,
-            image: null,
-          });
-          const newProduct: Product = {
-            id: saved.id,
-            productName: saved.product_name,
-            category: saved.category,
-            type: saved.type,
-            quantity: saved.quantity,
-            image: saved.image_url,
-            createdAt: saved.created_at,
-          };
-          setProducts(prev => [...prev, newProduct]);
-          createdTotal++;
-        }
-      }
-      setAlertMessage({ message: `Initialized ${createdTotal} catalog products at 0 qty`, type: 'success' });
-      setTimeout(() => setAlertMessage(null), 3000);
-    } catch (error) {
-      console.error('Initialize catalog error:', error);
-      setAlertMessage({ message: 'Initialization failed. Try again.', type: 'error' });
-      setTimeout(() => setAlertMessage(null), 3000);
-    } finally {
-      setInitializingCatalog(false);
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -1002,7 +822,7 @@ export default function InventoryPage() {
         </header>
 
         {/* Dashboard Content */}
-        <div className="flex-1 w-full p-6 md:p-8 overflow-auto" style={{ backgroundColor: isDarkMode ? '#0f0f1e' : '#fff0f5', marginTop: '70px' }}>
+        <div className="flex-1 w-full p-6 md:p-8 overflow-y-auto" style={{ backgroundColor: isDarkMode ? '#0f0f1e' : '#fff0f5', marginTop: '70px', overflowX: 'hidden' }}>
           <div className="max-w-6xl mx-auto">
             {/* Search Bar and Add Product Button */}
           <div className="flex flex-col md:flex-row gap-4 mb-8">
@@ -1031,13 +851,6 @@ export default function InventoryPage() {
             >
               {exportLoading ? '⏳...' : '📤 Export'}
             </Button>
-            <Button
-              onClick={handleInitializeAllCatalog}
-              variant="secondary"
-              disabled={initializingCatalog}
-            >
-              {initializingCatalog ? 'Initializing…' : 'Initialize Catalog (0 qty)'}
-            </Button>
           </div>
 
           {/* Products Grid - Grouped by Type with Mobile Carousel */}
@@ -1053,26 +866,7 @@ export default function InventoryPage() {
                     <span className="text-sm px-3 py-1 rounded-full" style={{ backgroundColor: '#ff69b4', color: '#ffffff' }}>
                       {groupProducts.length}
                     </span>
-                    {type === 'Plain' && (
-                      <>
-                        <Button onClick={() => setShowQuickPlainModal(true)} variant="secondary">
-                          Quick Add Plain
-                        </Button>
-                        <Button onClick={() => handleBulkAddCatalog('Plain')} variant="secondary" style={{ marginLeft: '8px' }} disabled={bulkAdding}>
-                          {bulkAdding ? 'Adding…' : 'Add All Plain'}
-                        </Button>
-                      </>
-                    )}
-                    {type === 'Printed' && (
-                      <>
-                        <Button onClick={() => setShowQuickPrintedModal(true)} variant="secondary">
-                          Quick Add Printed
-                        </Button>
-                        <Button onClick={() => handleBulkAddCatalog('Printed')} variant="secondary" style={{ marginLeft: '8px' }} disabled={bulkAdding}>
-                          {bulkAdding ? 'Adding…' : 'Add All Printed'}
-                        </Button>
-                      </>
-                    )}
+                    
                   </div>
 
                   {/* Desktop Grid / Mobile Carousel */}
@@ -1088,7 +882,7 @@ export default function InventoryPage() {
                   </div>
 
                   {/* Mobile Carousel */}
-                  <div className="md:hidden -mx-6">
+                  <div className="md:hidden">
                     <div className="relative">
                       <div className="overflow-x-auto snap-x snap-mandatory scrollbar-hide" 
                         style={{
@@ -1096,7 +890,7 @@ export default function InventoryPage() {
                         }}>
                         <div className="flex gap-4 pb-4 px-6" style={{ width: 'max-content' }}>
                           {groupProducts.map((product) => (
-                            <div key={product.id} className="snap-start flex-shrink-0" style={{ width: 'calc(100vw - 48px)' }}>
+                            <div key={product.id} className="snap-start flex-shrink-0" style={{ width: '100%' }}>
                               <ProductCard 
                                 product={product}
                                 isDarkMode={isDarkMode}
@@ -1419,81 +1213,6 @@ export default function InventoryPage() {
             </div>
       </Modal>
 
-      {/* Quick Add Printed Modal */}
-      <Modal isOpen={showQuickPrintedModal} onClose={() => setShowQuickPrintedModal(false)} style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
-        <div className="flex justify-between items-center p-4 md:p-6" style={{ borderBottom: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
-          <h2 className="text-xl md:text-2xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>Quick Add: Printed</h2>
-          <button onClick={() => setShowQuickPrintedModal(false)} className="text-2xl" style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>✕</button>
-        </div>
-        <div className="p-4 md:p-6 space-y-3">
-          {((catalogData['Geena Cloth'] as any)['Printed'] as string[]).map((name) => {
-            const existing = products.find(p => p.category === 'Geena Cloth' && p.type === 'Printed' && p.productName === name);
-            const currentQty = existing?.quantity || 0;
-            return (
-              <div key={name} className="flex items-center gap-2">
-                <div className="flex-1">
-                  <div className="font-medium" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>{name}</div>
-                  <div className="text-xs" style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>Current: {currentQty}</div>
-                </div>
-                <input
-                  type="number"
-                  value={quickAddQtyMap[name] || ''}
-                  onChange={(e) => setQuickAddQtyMap(prev => ({ ...prev, [name]: e.target.value }))}
-                  placeholder="yards"
-                  className="w-24 px-3 py-2 rounded-lg outline-none"
-                  style={{
-                    backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
-                    color: isDarkMode ? '#e8eaed' : '#2c3e50',
-                    border: `1px solid ${isDarkMode ? '#3d3d54' : '#e1e8ed'}`,
-                  }}
-                />
-                <Button onClick={() => handleQuickAddPrinted(name, parseInt(quickAddQtyMap[name] || '0'))} variant="secondary">Add</Button>
-                <Button onClick={() => handleQuickAddPrinted(name, 50)} variant="secondary">+50</Button>
-                <Button onClick={() => handleQuickAddPrinted(name, 100)} variant="secondary">+100</Button>
-                <Button onClick={() => handleQuickAddPrinted(name, 150)} variant="secondary">+150</Button>
-              </div>
-            );
-          })}
-        </div>
-      </Modal>
-
-      {/* Quick Add Plain Modal */}
-      <Modal isOpen={showQuickPlainModal} onClose={() => setShowQuickPlainModal(false)} style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
-        <div className="flex justify-between items-center p-4 md:p-6" style={{ borderBottom: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
-          <h2 className="text-xl md:text-2xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>Quick Add: Plain</h2>
-          <button onClick={() => setShowQuickPlainModal(false)} className="text-2xl" style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>✕</button>
-        </div>
-        <div className="p-4 md:p-6 space-y-3">
-          {((catalogData['Geena Cloth'] as any)['Plain'] as string[]).map((name) => {
-            const existing = products.find(p => p.category === 'Geena Cloth' && p.type === 'Plain' && p.productName === name);
-            const currentQty = existing?.quantity || 0;
-            return (
-              <div key={name} className="flex items-center gap-2">
-                <div className="flex-1">
-                  <div className="font-medium" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>{name}</div>
-                  <div className="text-xs" style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>Current: {currentQty}</div>
-                </div>
-                <input
-                  type="number"
-                  value={quickAddQtyMap[name] || ''}
-                  onChange={(e) => setQuickAddQtyMap(prev => ({ ...prev, [name]: e.target.value }))}
-                  placeholder="yards"
-                  className="w-24 px-3 py-2 rounded-lg outline-none"
-                  style={{
-                    backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
-                    color: isDarkMode ? '#e8eaed' : '#2c3e50',
-                    border: `1px solid ${isDarkMode ? '#3d3d54' : '#e1e8ed'}`,
-                  }}
-                />
-                <Button onClick={() => handleQuickAddPlain(name, parseInt(quickAddQtyMap[name] || '0'))} variant="secondary">Add</Button>
-                <Button onClick={() => handleQuickAddPlain(name, 50)} variant="secondary">+50</Button>
-                <Button onClick={() => handleQuickAddPlain(name, 100)} variant="secondary">+100</Button>
-                <Button onClick={() => handleQuickAddPlain(name, 150)} variant="secondary">+150</Button>
-              </div>
-            );
-          })}
-        </div>
-      </Modal>
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
