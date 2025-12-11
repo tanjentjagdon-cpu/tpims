@@ -13,5 +13,7 @@ services:
         sync: false
       - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
         sync: false
+      - key: NEXT_PUBLIC_API_URL
+        value: https://tpimis-backend.onrender.com
       - key: NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET
         value: images

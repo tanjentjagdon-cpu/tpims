@@ -674,22 +674,17 @@ export default function LoginPage() {
         }
 
         .success-message {
-          position: fixed;
-          top: 20px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: linear-gradient(135deg, #4CAF50, #45a049);
+          background: rgba(76, 175, 80, 0.1);
           border: 2px solid #4CAF50;
           border-radius: 12px;
-          padding: 20px 30px;
-          color: #fff;
-          font-size: 15px;
+          padding: 12px 16px;
+          color: #2e7d32;
+          font-size: 14px;
           font-weight: 600;
           text-align: center;
-          animation: slideDown 0.5s ease-out, slideUp 0.5s ease-in 2.5s forwards;
-          box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
-          z-index: 2000;
-          max-width: 90%;
+          animation: fadeIn 0.3s ease-in-out;
+          box-shadow: 0 4px 12px rgba(76, 175, 80, 0.15);
+          margin-bottom: 16px;
           word-wrap: break-word;
         }
 
@@ -722,28 +717,24 @@ export default function LoginPage() {
         }
 
         body.dark-mode .success-message {
-          background: linear-gradient(135deg, #2E7D32, #1B5E20);
-          border-color: #4CAF50;
-          box-shadow: 0 8px 25px rgba(76, 175, 80, 0.2);
+          background: rgba(93, 147, 232, 0.1);
+          border-color: #5d93e8;
+          color: #4a7bd8;
+          box-shadow: 0 4px 12px rgba(93, 147, 232, 0.15);
         }
 
         .forgot-password-alert {
-          position: fixed;
-          top: 20px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: #ff69b4;
-          border: none;
+          background: rgba(255, 105, 180, 0.1);
+          border: 2px solid #ff69b4;
           border-radius: 12px;
-          padding: 15px 20px;
-          color: #fff;
+          padding: 12px 16px;
+          color: #ff69b4;
           font-size: 14px;
           font-weight: 500;
           text-align: center;
-          animation: slideDown 0.5s ease-out, slideUp 0.5s ease-in 2.5s forwards;
-          box-shadow: 0 4px 12px rgba(255, 105, 180, 0.4);
-          z-index: 2000;
-          max-width: 90%;
+          animation: fadeIn 0.3s ease-in-out;
+          box-shadow: 0 4px 12px rgba(255, 105, 180, 0.15);
+          margin-bottom: 16px;
           word-wrap: break-word;
         }
 
@@ -753,10 +744,10 @@ export default function LoginPage() {
         }
 
         body.dark-mode .forgot-password-alert {
-          background: #7aa6f0;
-          border: none;
-          color: #fff;
-          box-shadow: 0 4px 12px rgba(122, 166, 240, 0.4);
+          background: rgba(122, 166, 240, 0.1);
+          border: 2px solid #7aa6f0;
+          color: #4a7bd8;
+          box-shadow: 0 4px 12px rgba(122, 166, 240, 0.15);
         }
 
         @media (max-width: 480px) {
@@ -764,13 +755,7 @@ export default function LoginPage() {
           .logo { width: 100px; height: 100px; font-size: 40px; }
           .login-header h1 { font-size: 28px; }
           .theme-switch { top: 15px; right: 15px; }
-          .forgot-password-alert {
-            left: 12px;
-            right: 12px;
-            transform: none;
-            max-width: none;
-            top: 16px;
-          }
+          .error-message, .success-message, .forgot-password-alert { padding: 10px 12px; font-size: 13px; }
         }
 
         @media (max-width: 360px) {
@@ -778,18 +763,11 @@ export default function LoginPage() {
           .logo { width: 80px; height: 80px; font-size: 32px; }
           .form-group input { padding: 12px 16px; font-size: 14px; }
           .submit-btn { padding: 12px; font-size: 15px; }
-          .forgot-password-alert {
-            left: 10px;
-            right: 10px;
-            transform: none;
-            max-width: none;
-            top: 12px;
-          }
+          .error-message, .success-message, .forgot-password-alert { padding: 8px 10px; font-size: 12px; }
         }
       `}</style>
 
-      {success && <div className="success-message">{success}</div>}
-      {forgotPasswordAlert && <div className="forgot-password-alert">{forgotPasswordAlert}</div>}
+      
 
       <div className="bg-animation">
         <div className="bubble"></div>
@@ -835,7 +813,9 @@ export default function LoginPage() {
             <p>Login to continue to Labandero</p>
           </div>
 
+          {forgotPasswordAlert && <div className="forgot-password-alert">{forgotPasswordAlert}</div>}
           {error && <div className="error-message">{error}</div>}
+          {success && <div className="success-message">{success}</div>}
 
           <form className="login-form" onSubmit={handleSubmit}>
             <div className="form-group">

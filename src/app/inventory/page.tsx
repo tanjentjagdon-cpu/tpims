@@ -56,6 +56,8 @@ export default function InventoryPage() {
         'White',
         'Yellow',
         'Yellow Gold',
+        'Royal Blue',
+        'Aqua Blue',
       ],
       'Printed': [
         'Christmas Eve Cream',
@@ -71,6 +73,9 @@ export default function InventoryPage() {
         'Esther PP-Red',
         'Olive Green-Noraisa',
         'Yellow-Sidnilyn',
+        'Esther Blue',
+        'Drake Royal Blue',
+        'Paloma Red',
       ],
     },
   };
@@ -83,6 +88,10 @@ export default function InventoryPage() {
     quantity: '',
     image: null as File | null,
   });
+  const [addQuantity, setAddQuantity] = useState('');
+  const [showQuickPrintedModal, setShowQuickPrintedModal] = useState(false);
+  const [quickAddQtyMap, setQuickAddQtyMap] = useState<{[name: string]: string}>({});
+  const [showQuickPlainModal, setShowQuickPlainModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState<{message: string; type: 'success' | 'error'} | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
@@ -336,9 +345,121 @@ export default function InventoryPage() {
       quantity: product.quantity.toString(),
       image: null,
     });
+    setAddQuantity('');
     setEditingProductId(product.id);
     setShowModal(true);
     setExpandedProductId(null);
+  };
+
+  const handleAddQuantity = async (productId: string, amount: number) => {
+    try {
+      const target = products.find(p => p.id === productId);
+      if (!target) return;
+      const increment = Math.max(0, Math.floor(amount || 0));
+      if (!increment) {
+        setAlertMessage({ message: 'Enter a valid quantity', type: 'error' });
+        setTimeout(() => setAlertMessage(null), 2000);
+        return;
+      }
+      const newQty = (target.quantity || 0) + increment;
+      await inventoryService.updateProductQuantity(productId, newQty);
+      setProducts(products.map(p => p.id === productId ? { ...p, quantity: newQty } : p));
+      setAlertMessage({ message: `Added ${increment} yards. Total: ${newQty}`, type: 'success' });
+      setTimeout(() => setAlertMessage(null), 3000);
+      setAddQuantity('');
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+      setAlertMessage({ message: 'Update failed. Please try again.', type: 'error' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    }
+  };
+
+  const handleQuickAddPrinted = async (name: string, amount: number) => {
+    try {
+      if (!user) return;
+      const increment = Math.max(0, Math.floor(amount || 0));
+      if (!increment) {
+        setAlertMessage({ message: 'Enter a valid quantity', type: 'error' });
+        setTimeout(() => setAlertMessage(null), 2000);
+        return;
+      }
+      const existingProduct = products.find(p => p.category === 'Geena Cloth' && p.type === 'Printed' && p.productName === name);
+      if (existingProduct) {
+        const newQty = (existingProduct.quantity || 0) + increment;
+        await inventoryService.updateProductQuantity(existingProduct.id, newQty);
+        setProducts(products.map(p => p.id === existingProduct.id ? { ...p, quantity: newQty } : p));
+        setAlertMessage({ message: `Added ${increment} to ${name}. Total: ${newQty}`, type: 'success' });
+      } else {
+        const saved = await inventoryService.saveProduct(user.id, {
+          productName: name,
+          category: 'Geena Cloth',
+          type: 'Printed',
+          quantity: increment,
+          image: null,
+        });
+        const newProduct: Product = {
+          id: saved.id,
+          productName: saved.product_name,
+          category: saved.category,
+          type: saved.type,
+          quantity: saved.quantity,
+          image: saved.image_url,
+          createdAt: saved.created_at,
+        };
+        setProducts([...products, newProduct]);
+        setAlertMessage({ message: `Created ${name} with ${increment} qty`, type: 'success' });
+      }
+      setTimeout(() => setAlertMessage(null), 3000);
+      setQuickAddQtyMap(prev => ({ ...prev, [name]: '' }));
+    } catch (error) {
+      console.error('Error quick-adding printed:', error);
+      setAlertMessage({ message: 'Operation failed. Please try again.', type: 'error' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    }
+  };
+
+  const handleQuickAddPlain = async (name: string, amount: number) => {
+    try {
+      if (!user) return;
+      const increment = Math.max(0, Math.floor(amount || 0));
+      if (!increment) {
+        setAlertMessage({ message: 'Enter a valid quantity', type: 'error' });
+        setTimeout(() => setAlertMessage(null), 2000);
+        return;
+      }
+      const existingProduct = products.find(p => p.category === 'Geena Cloth' && p.type === 'Plain' && p.productName === name);
+      if (existingProduct) {
+        const newQty = (existingProduct.quantity || 0) + increment;
+        await inventoryService.updateProductQuantity(existingProduct.id, newQty);
+        setProducts(products.map(p => p.id === existingProduct.id ? { ...p, quantity: newQty } : p));
+        setAlertMessage({ message: `Added ${increment} to ${name}. Total: ${newQty}`, type: 'success' });
+      } else {
+        const saved = await inventoryService.saveProduct(user.id, {
+          productName: name,
+          category: 'Geena Cloth',
+          type: 'Plain',
+          quantity: increment,
+          image: null,
+        });
+        const newProduct: Product = {
+          id: saved.id,
+          productName: saved.product_name,
+          category: saved.category,
+          type: saved.type,
+          quantity: saved.quantity,
+          image: saved.image_url,
+          createdAt: saved.created_at,
+        };
+        setProducts([...products, newProduct]);
+        setAlertMessage({ message: `Created ${name} with ${increment} qty`, type: 'success' });
+      }
+      setTimeout(() => setAlertMessage(null), 3000);
+      setQuickAddQtyMap(prev => ({ ...prev, [name]: '' }));
+    } catch (error) {
+      console.error('Error quick-adding plain:', error);
+      setAlertMessage({ message: 'Operation failed. Please try again.', type: 'error' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    }
   };
 
   const handleLogout = async () => {
@@ -835,6 +956,16 @@ export default function InventoryPage() {
                     <span className="text-sm px-3 py-1 rounded-full" style={{ backgroundColor: '#ff69b4', color: '#ffffff' }}>
                       {groupProducts.length}
                     </span>
+                    {type === 'Plain' && (
+                      <Button onClick={() => setShowQuickPlainModal(true)} variant="secondary">
+                        Quick Add Plain
+                      </Button>
+                    )}
+                    {type === 'Printed' && (
+                      <Button onClick={() => setShowQuickPrintedModal(true)} variant="secondary">
+                        Quick Add Printed
+                      </Button>
+                    )}
                   </div>
 
                   {/* Desktop Grid / Mobile Carousel */}
@@ -958,7 +1089,7 @@ export default function InventoryPage() {
             {/* Modal Header - Fixed */}
             <div className="flex justify-between items-center p-4 md:p-6 flex-shrink-0" style={{ borderBottom: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
               <h2 className="text-xl md:text-2xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
-                {editingProductId ? 'Edit Product' : 'Add Product'}
+                {editingProductId ? 'Adjust Quantity' : 'Add Product'}
               </h2>
               <button
                 onClick={() => {
@@ -973,38 +1104,151 @@ export default function InventoryPage() {
             </div>
 
             {/* Modal Content - Scrollable */}
-            <form onSubmit={handleAddProduct} className="modal-scroll flex-1 p-4 md:p-6 space-y-4" id="product-form">
-              {/* Category - Can select or manually enter */}
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
-                  Category
-                </label>
-                <div className="flex flex-col md:flex-row gap-2">
+            {editingProductId ? (
+              <div className="modal-scroll flex-1 p-4 md:p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
+                    Add Yards
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={addQuantity}
+                      onChange={(e) => setAddQuantity(e.target.value)}
+                      placeholder="Enter yards to add"
+                      className="flex-1 px-4 py-2 rounded-lg outline-none transition-all"
+                      style={{
+                        backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
+                        color: isDarkMode ? '#e8eaed' : '#2c3e50',
+                        border: `1px solid ${isDarkMode ? '#3d3d54' : '#e1e8ed'}`,
+                      }}
+                    />
+                    <Button onClick={() => handleAddQuantity(editingProductId!, parseInt(addQuantity || '0'))} variant="secondary">
+                      Add Quantity
+                    </Button>
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <Button onClick={() => handleAddQuantity(editingProductId!, 50)} variant="secondary">+50</Button>
+                    <Button onClick={() => handleAddQuantity(editingProductId!, 100)} variant="secondary">+100</Button>
+                    <Button onClick={() => handleAddQuantity(editingProductId!, 150)} variant="secondary">+150</Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleAddProduct} className="modal-scroll flex-1 p-4 md:p-6 space-y-4" id="product-form">
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
+                    Category
+                  </label>
+                  <div className="flex flex-col md:flex-row gap-2">
+                    <select
+                      value={formData.category}
+                      onChange={(e) => {
+                        const selected = e.target.value;
+                        if (selected) {
+                          setFormData({...formData, category: selected, type: '', productName: ''});
+                        }
+                      }}
+                      className="w-full md:flex-1 px-4 py-2 rounded-lg outline-none transition-all"
+                      style={{
+                        backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
+                        color: isDarkMode ? '#e8eaed' : '#2c3e50',
+                        border: `1px solid ${isDarkMode ? '#3d3d54' : '#e1e8ed'}`,
+                      }}>
+                      <option value="">Select from list...</option>
+                      {Array.from(new Set([...Object.keys(catalogData), ...products.map(p => p.category)])).sort().map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="or type..."
+                      value={formData.category}
+                      onChange={(e) => setFormData({...formData, category: e.target.value})}
+                      className="w-full md:flex-1 px-4 py-2 rounded-lg outline-none transition-all"
+                      style={{
+                        backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
+                        color: isDarkMode ? '#e8eaed' : '#2c3e50',
+                        border: `1px solid ${isDarkMode ? '#3d3d54' : '#e1e8ed'}`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
+                    Type
+                  </label>
                   <select
-                    value={formData.category}
-                    onChange={(e) => {
-                      const selected = e.target.value;
-                      if (selected) {
-                        setFormData({...formData, category: selected, type: '', productName: ''});
-                      }
-                    }}
-                    className="w-full md:flex-1 px-4 py-2 rounded-lg outline-none transition-all"
+                    value={formData.type}
+                    onChange={(e) => setFormData({...formData, type: e.target.value, productName: ''})}
+                    disabled={!formData.category}
+                    className="w-full px-4 py-2 rounded-lg outline-none transition-all"
                     style={{
                       backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
                       color: isDarkMode ? '#e8eaed' : '#2c3e50',
                       border: `1px solid ${isDarkMode ? '#3d3d54' : '#e1e8ed'}`,
+                      opacity: !formData.category ? 0.5 : 1,
+                      cursor: !formData.category ? 'not-allowed' : 'pointer',
                     }}>
-                    <option value="">Select from list...</option>
-                    {Array.from(new Set([...Object.keys(catalogData), ...products.map(p => p.category)])).sort().map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
+                    <option value="">Select a type</option>
+                    <option value="Plain">Plain</option>
+                    <option value="Printed">Printed</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
+                    Product Name
+                  </label>
+                  <div className="flex flex-col md:flex-row gap-2">
+                    <select
+                      value={formData.productName}
+                      onChange={(e) => {
+                        const selected = e.target.value;
+                        if (selected) {
+                          setFormData({...formData, productName: selected});
+                        }
+                      }}
+                      disabled={!formData.type}
+                      className="w-full md:flex-1 px-4 py-2 rounded-lg outline-none transition-all"
+                      style={{
+                        backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
+                        color: isDarkMode ? '#e8eaed' : '#2c3e50',
+                        border: `1px solid ${isDarkMode ? '#3d3d54' : '#e1e8ed'}`,
+                        opacity: !formData.type ? 0.5 : 1,
+                        cursor: !formData.type ? 'not-allowed' : 'pointer',
+                      }}>
+                      <option value="">Select from list...</option>
+                      {getAvailableProductNames().map((product: string) => (
+                        <option key={product} value={product}>{product}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="or type..."
+                      value={formData.productName}
+                      onChange={(e) => setFormData({...formData, productName: e.target.value})}
+                      className="w-full md:flex-1 px-4 py-2 rounded-lg outline-none transition-all"
+                      style={{
+                        backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
+                        color: isDarkMode ? '#e8eaed' : '#2c3e50',
+                        border: `1px solid ${isDarkMode ? '#3d3d54' : '#e1e8ed'}`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
+                    Quantity
+                  </label>
                   <input
-                    type="text"
-                    placeholder="or type..."
-                    value={formData.category}
-                    onChange={(e) => setFormData({...formData, category: e.target.value})}
-                    className="w-full md:flex-1 px-4 py-2 rounded-lg outline-none transition-all"
+                    type="number"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({...formData, quantity: e.target.value})}
+                    placeholder="Enter quantity"
+                    className="w-full px-4 py-2 rounded-lg outline-none transition-all"
                     style={{
                       backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
                       color: isDarkMode ? '#e8eaed' : '#2c3e50',
@@ -1012,104 +1256,18 @@ export default function InventoryPage() {
                     }}
                   />
                 </div>
-              </div>
 
-              {/* Type - Fixed to Plain or Printed only */}
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
-                  Type
-                </label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({...formData, type: e.target.value, productName: ''})}
-                  disabled={!formData.category}
-                  className="w-full px-4 py-2 rounded-lg outline-none transition-all"
-                  style={{
-                    backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
-                    color: isDarkMode ? '#e8eaed' : '#2c3e50',
-                    border: `1px solid ${isDarkMode ? '#3d3d54' : '#e1e8ed'}`,
-                    opacity: !formData.category ? 0.5 : 1,
-                    cursor: !formData.category ? 'not-allowed' : 'pointer',
-                  }}>
-                  <option value="">Select a type</option>
-                  <option value="Plain">Plain</option>
-                  <option value="Printed">Printed</option>
-                </select>
-              </div>
-
-              {/* Product Name - Can select or manually enter */}
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
-                  Product Name
-                </label>
-                <div className="flex flex-col md:flex-row gap-2">
-                  <select
-                    value={formData.productName}
-                    onChange={(e) => {
-                      const selected = e.target.value;
-                      if (selected) {
-                        setFormData({...formData, productName: selected});
-                      }
-                    }}
-                    disabled={!formData.type}
-                    className="w-full md:flex-1 px-4 py-2 rounded-lg outline-none transition-all"
-                    style={{
-                      backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
-                      color: isDarkMode ? '#e8eaed' : '#2c3e50',
-                      border: `1px solid ${isDarkMode ? '#3d3d54' : '#e1e8ed'}`,
-                      opacity: !formData.type ? 0.5 : 1,
-                      cursor: !formData.type ? 'not-allowed' : 'pointer',
-                    }}>
-                    <option value="">Select from list...</option>
-                    {getAvailableProductNames().map((product: string) => (
-                      <option key={product} value={product}>{product}</option>
-                    ))}
-                  </select>
-                  <input
-                    type="text"
-                    placeholder="or type..."
-                    value={formData.productName}
-                    onChange={(e) => setFormData({...formData, productName: e.target.value})}
-                    className="w-full md:flex-1 px-4 py-2 rounded-lg outline-none transition-all"
-                    style={{
-                      backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
-                      color: isDarkMode ? '#e8eaed' : '#2c3e50',
-                      border: `1px solid ${isDarkMode ? '#3d3d54' : '#e1e8ed'}`,
-                    }}
+                <div className="mt-4">
+                  <label className="block text-sm font-medium mb-2" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
+                    Image (Optional)
+                  </label>
+                  <ImageUpload 
+                    onImageSelect={(file) => setFormData({...formData, image: file})}
+                    accept="image/*"
                   />
                 </div>
-              </div>
-
-              {/* Quantity */}
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
-                  Quantity
-                </label>
-                <input
-                  type="number"
-                  value={formData.quantity}
-                  onChange={(e) => setFormData({...formData, quantity: e.target.value})}
-                  placeholder="Enter quantity"
-                  className="w-full px-4 py-2 rounded-lg outline-none transition-all"
-                  style={{
-                    backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
-                    color: isDarkMode ? '#e8eaed' : '#2c3e50',
-                    border: `1px solid ${isDarkMode ? '#3d3d54' : '#e1e8ed'}`,
-                  }}
-                />
-              </div>
-
-              {/* Image Upload */}
-              <div className="mt-4">
-                <label className="block text-sm font-medium mb-2" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
-                  Image (Optional)
-                </label>
-                <ImageUpload 
-                  onImageSelect={(file) => setFormData({...formData, image: file})}
-                  accept="image/*"
-                />
-              </div>
-            </form>
+              </form>
+            )}
 
             {/* Modal Footer - Fixed */}
             <div className="flex gap-3 p-6 flex-shrink-0" style={{ borderTop: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}`, backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
@@ -1118,21 +1276,108 @@ export default function InventoryPage() {
                   setShowModal(false);
                   setEditingProductId(null);
                   setFormData({ category: '', type: '', productName: '', quantity: '', image: null });
+                  setAddQuantity('');
                 }}
                 variant="primary"
                 style={{ flex: 1 }}
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit"
-                form="product-form"
-                variant="secondary"
-                style={{ flex: 1 }}
-              >
-                {editingProductId ? 'Update Product' : 'Save Product'}
-              </Button>
+              {editingProductId ? (
+                <Button 
+                  onClick={() => handleAddQuantity(editingProductId!, parseInt(addQuantity || '0'))}
+                  variant="secondary"
+                  style={{ flex: 1 }}
+                >
+                  Add Quantity
+                </Button>
+              ) : (
+                <Button 
+                  type="submit"
+                  form="product-form"
+                  variant="secondary"
+                  style={{ flex: 1 }}
+                >
+                  Save Product
+                </Button>
+              )}
             </div>
+      </Modal>
+
+      {/* Quick Add Printed Modal */}
+      <Modal isOpen={showQuickPrintedModal} onClose={() => setShowQuickPrintedModal(false)} style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
+        <div className="flex justify-between items-center p-4 md:p-6" style={{ borderBottom: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
+          <h2 className="text-xl md:text-2xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>Quick Add: Printed</h2>
+          <button onClick={() => setShowQuickPrintedModal(false)} className="text-2xl" style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>✕</button>
+        </div>
+        <div className="p-4 md:p-6 space-y-3">
+          {((catalogData['Geena Cloth'] as any)['Printed'] as string[]).map((name) => {
+            const existing = products.find(p => p.category === 'Geena Cloth' && p.type === 'Printed' && p.productName === name);
+            const currentQty = existing?.quantity || 0;
+            return (
+              <div key={name} className="flex items-center gap-2">
+                <div className="flex-1">
+                  <div className="font-medium" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>{name}</div>
+                  <div className="text-xs" style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>Current: {currentQty}</div>
+                </div>
+                <input
+                  type="number"
+                  value={quickAddQtyMap[name] || ''}
+                  onChange={(e) => setQuickAddQtyMap(prev => ({ ...prev, [name]: e.target.value }))}
+                  placeholder="yards"
+                  className="w-24 px-3 py-2 rounded-lg outline-none"
+                  style={{
+                    backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
+                    color: isDarkMode ? '#e8eaed' : '#2c3e50',
+                    border: `1px solid ${isDarkMode ? '#3d3d54' : '#e1e8ed'}`,
+                  }}
+                />
+                <Button onClick={() => handleQuickAddPlain(name, parseInt(quickAddQtyMap[name] || '0'))} variant="secondary">Add</Button>
+                <Button onClick={() => handleQuickAddPlain(name, 50)} variant="secondary">+50</Button>
+                <Button onClick={() => handleQuickAddPlain(name, 100)} variant="secondary">+100</Button>
+                <Button onClick={() => handleQuickAddPlain(name, 150)} variant="secondary">+150</Button>
+              </div>
+            );
+          })}
+        </div>
+      </Modal>
+
+      {/* Quick Add Plain Modal */}
+      <Modal isOpen={showQuickPlainModal} onClose={() => setShowQuickPlainModal(false)} style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
+        <div className="flex justify-between items-center p-4 md:p-6" style={{ borderBottom: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
+          <h2 className="text-xl md:text-2xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>Quick Add: Plain</h2>
+          <button onClick={() => setShowQuickPlainModal(false)} className="text-2xl" style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>✕</button>
+        </div>
+        <div className="p-4 md:p-6 space-y-3">
+          {((catalogData['Geena Cloth'] as any)['Plain'] as string[]).map((name) => {
+            const existing = products.find(p => p.category === 'Geena Cloth' && p.type === 'Plain' && p.productName === name);
+            const currentQty = existing?.quantity || 0;
+            return (
+              <div key={name} className="flex items-center gap-2">
+                <div className="flex-1">
+                  <div className="font-medium" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>{name}</div>
+                  <div className="text-xs" style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>Current: {currentQty}</div>
+                </div>
+                <input
+                  type="number"
+                  value={quickAddQtyMap[name] || ''}
+                  onChange={(e) => setQuickAddQtyMap(prev => ({ ...prev, [name]: e.target.value }))}
+                  placeholder="yards"
+                  className="w-24 px-3 py-2 rounded-lg outline-none"
+                  style={{
+                    backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
+                    color: isDarkMode ? '#e8eaed' : '#2c3e50',
+                    border: `1px solid ${isDarkMode ? '#3d3d54' : '#e1e8ed'}`,
+                  }}
+                />
+                <Button onClick={() => handleQuickAddPrinted(name, parseInt(quickAddQtyMap[name] || '0'))} variant="secondary">Add</Button>
+                <Button onClick={() => handleQuickAddPrinted(name, 50)} variant="secondary">+50</Button>
+                <Button onClick={() => handleQuickAddPrinted(name, 100)} variant="secondary">+100</Button>
+                <Button onClick={() => handleQuickAddPrinted(name, 150)} variant="secondary">+150</Button>
+              </div>
+            );
+          })}
+        </div>
       </Modal>
 
       {/* Delete Confirmation Modal */}
@@ -1164,44 +1409,20 @@ export default function InventoryPage() {
               </p>
 
               <div className="flex gap-3">
-                <button
+                <Button 
                   onClick={() => setShowDeleteConfirm(false)}
-                  style={{
-                    flex: 1,
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    backgroundColor: isDarkMode ? '#2d2d44' : '#e1e8ed',
-                    color: isDarkMode ? '#e8eaed' : '#2c3e50',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                  variant="primary"
+                  style={{ flex: 1 }}
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button 
                   onClick={confirmDeleteProduct}
-                  style={{
-                    flex: 1,
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    backgroundColor: '#ef4444',
-                    color: '#ffffff',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
-                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                  variant="secondary"
+                  style={{ flex: 1 }}
                 >
                   🗑️ Delete
-                </button>
+                </Button>
               </div>
             </div>
           </div>
