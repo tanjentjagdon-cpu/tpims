@@ -6,6 +6,7 @@ import { useTheme } from '@/lib/themeContext';
 import * as inventoryService from '@/lib/inventoryService';
 import Loader from '@/components/Loader';
 import Button from '@/components/Button';
+import Modal from '@/components/Modal';
 
 interface Product {
   id: string;
@@ -44,7 +45,7 @@ export default function CutsPage() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const { isDarkMode, isThemeSwitching } = useTheme();
+  const { isDarkMode, isThemeSwitching, toggleTheme } = useTheme();
   const [currentPage] = useState('cuts');
   const [activeTab, setActiveTab] = useState<'cuts' | 'returns'>('cuts');
   const [products, setProducts] = useState<Product[]>([]);
@@ -82,7 +83,7 @@ export default function CutsPage() {
         setUser(session.user);
         await loadProducts(session.user.id);
         loadCuts();
-        loadReturnedParcels();
+        await loadReturnedParcelsFromSupabase(session.user.id);
       } catch (error) {
         console.error('Auth error:', error);
         window.location.href = '/login';
@@ -129,10 +130,21 @@ export default function CutsPage() {
     }
   };
 
-  const loadReturnedParcels = () => {
-    const storedReturns = localStorage.getItem('returned_parcels');
-    if (storedReturns) {
-      setReturnedParcels(JSON.parse(storedReturns));
+  const loadReturnedParcelsFromSupabase = async (userId: string) => {
+    try {
+      const data = await inventoryService.loadReturnedParcels(userId);
+      const formatted = data.map((p: any) => ({
+        id: p.id,
+        orderId: p.orderId,
+        shop: p.shop as 'Shopee' | 'TikTok' | 'Lazada',
+        products: p.products,
+        returnDate: p.returnDate,
+        restockedDate: p.restockedDate,
+        status: p.status === 'restocked' ? ('Restocked' as const) : ('Pending' as const),
+      }));
+      setReturnedParcels(formatted);
+    } catch (error) {
+      console.error('Error loading returned parcels:', error);
     }
   };
 
@@ -237,10 +249,8 @@ export default function CutsPage() {
 
       await loadProducts(user.id);
 
-      // Remove from list instead of updating status
-      const updatedParcels = returnedParcels.filter(p => p.id !== parcel.id);
-      setReturnedParcels(updatedParcels);
-      localStorage.setItem('returned_parcels', JSON.stringify(updatedParcels));
+      await inventoryService.markParcelRestocked(parcel.id);
+      setReturnedParcels(returnedParcels.map(p => p.id === parcel.id ? { ...p, status: 'Restocked', restockedDate: new Date().toISOString().split('T')[0] } : p));
 
       const totalQty = parcel.products.reduce((sum, p) => sum + p.quantity, 0);
       setAlertMessage({ message: `✅ Restocked ${totalQty} items back to inventory!`, type: 'success' });
@@ -340,7 +350,7 @@ export default function CutsPage() {
           {/* Theme Toggle */}
           <label className="theme-switch">
             <input type="checkbox" className="theme-switch__checkbox" checked={isDarkMode}
-              onChange={() => { localStorage.setItem('theme', isDarkMode ? 'light' : 'dark'); window.dispatchEvent(new Event('storage')); }} />
+              onChange={toggleTheme} />
             <div className="theme-switch__container">
               <div className="theme-switch__circle-container">
                 <div className="theme-switch__sun-moon-container">
@@ -351,23 +361,175 @@ export default function CutsPage() {
                   </div>
                 </div>
               </div>
+              <div className="theme-switch__clouds"></div>
+              <div className="theme-switch__stars-container">★★★</div>
             </div>
           </label>
           <style>{`
-            .theme-switch { --toggle-size: 20px; position: fixed; top: 15px; right: 15px; z-index: 1000; }
-            .theme-switch__container { width: 3.75em; height: 1.67em; background-color: #3D7EAE; border-radius: 6.25em; cursor: pointer; transition: .5s; position: relative; font-size: var(--toggle-size); }
-            .theme-switch__checkbox:checked + .theme-switch__container { background-color: #1D1F2C; }
-            .theme-switch__checkbox { display: none; }
-            .theme-switch__circle-container { width: 2.25em; height: 2.25em; position: absolute; left: calc((2.25em - 1.67em) / 2 * -1); top: calc((2.25em - 1.67em) / 2 * -1); border-radius: 6.25em; display: flex; transition: .3s; font-size: var(--toggle-size); }
-            .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__circle-container { left: calc(100% - 2.25em + (2.25em - 1.67em) / 2); }
-            .theme-switch__sun-moon-container { width: 1.42em; height: 1.42em; margin: auto; border-radius: 6.25em; background-color: #ECCA2F; transition: .5s; overflow: hidden; font-size: var(--toggle-size); }
-            .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__sun-moon-container { background-color: #C4C9D1; }
-            .theme-switch__moon { transform: translateX(100%); width: 100%; height: 100%; background-color: #C4C9D1; border-radius: inherit; transition: .5s; position: relative; }
-            .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__moon { transform: translateX(0); }
-            .theme-switch__spot { position: absolute; background-color: #959DB1; border-radius: 50%; }
-            .theme-switch__spot:nth-child(1) { width: 0.35em; height: 0.35em; top: 0.25em; left: 0.4em; }
-            .theme-switch__spot:nth-child(2) { width: 0.2em; height: 0.2em; top: 0.6em; left: 0.2em; }
-            .theme-switch__spot:nth-child(3) { width: 0.25em; height: 0.25em; top: 0.65em; left: 0.6em; }
+            .theme-switch {
+              --toggle-size: 20px;
+              --container-width: 3.75em;
+              --container-height: 1.67em;
+              --container-radius: 6.25em;
+              --container-light-bg: #3D7EAE;
+              --container-night-bg: #1D1F2C;
+              --circle-container-diameter: 2.25em;
+              --sun-moon-diameter: 1.42em;
+              --sun-bg: #ECCA2F;
+              --moon-bg: #C4C9D1;
+              --spot-color: #959DB1;
+              --circle-container-offset: calc((var(--circle-container-diameter) - var(--container-height)) / 2 * -1);
+              --stars-color: #fff;
+              --clouds-color: #F3FDFF;
+              --back-clouds-color: #AACADF;
+              --transition: .5s cubic-bezier(0, -0.02, 0.4, 1.25);
+              --circle-transition: .3s cubic-bezier(0, -0.02, 0.35, 1.17);
+              position: fixed;
+              top: 15px;
+              right: 15px;
+              z-index: 1000;
+            }
+
+            .theme-switch, .theme-switch *, .theme-switch *::before, .theme-switch *::after {
+              box-sizing: border-box;
+              margin: 0;
+              padding: 0;
+              font-size: var(--toggle-size);
+            }
+
+            .theme-switch__container {
+              width: var(--container-width);
+              height: var(--container-height);
+              background-color: var(--container-light-bg);
+              border-radius: var(--container-radius);
+              overflow: hidden;
+              cursor: pointer;
+              box-shadow: 0em -0.062em 0.062em rgba(0, 0, 0, 0.25), 0em 0.062em 0.125em rgba(255, 255, 255, 0.94);
+              transition: var(--transition);
+              position: relative;
+            }
+
+            .theme-switch__container::before {
+              content: "";
+              position: absolute;
+              z-index: 1;
+              inset: 0;
+              box-shadow: 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset, 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset;
+              border-radius: var(--container-radius)
+            }
+
+            .theme-switch__checkbox {
+              display: none;
+            }
+
+            .theme-switch__circle-container {
+              width: var(--circle-container-diameter);
+              height: var(--circle-container-diameter);
+              background-color: rgba(255, 255, 255, 0.1);
+              position: absolute;
+              left: var(--circle-container-offset);
+              top: var(--circle-container-offset);
+              border-radius: var(--container-radius);
+              box-shadow: inset 0 0 0 2.25em rgba(255, 255, 255, 0.1), inset 0 0 0 2.25em rgba(255, 255, 255, 0.1), 0 0 0 0.42em rgba(255, 255, 255, 0.1), 0 0 0 0.83em rgba(255, 255, 255, 0.1);
+              display: flex;
+              transition: var(--circle-transition);
+              pointer-events: none;
+            }
+
+            .theme-switch__sun-moon-container {
+              pointer-events: auto;
+              position: relative;
+              z-index: 2;
+              width: var(--sun-moon-diameter);
+              height: var(--sun-moon-diameter);
+              margin: auto;
+              border-radius: var(--container-radius);
+              background-color: var(--sun-bg);
+              box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #a1872a inset;
+              filter: drop-shadow(0.062em 0.125em 0.125em rgba(0, 0, 0, 0.25)) drop-shadow(0em 0.062em 0.125em rgba(0, 0, 0, 0.25));
+              overflow: hidden;
+              transition: var(--transition);
+            }
+
+            .theme-switch__moon {
+              transform: translateX(100%);
+              width: 100%;
+              height: 100%;
+              background-color: var(--moon-bg);
+              border-radius: inherit;
+              box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #969696 inset;
+              transition: var(--transition);
+              position: relative;
+            }
+
+            .theme-switch__spot {
+              position: absolute;
+              top: 0.5em;
+              left: 0.21em;
+              width: 0.5em;
+              height: 0.5em;
+              border-radius: var(--container-radius);
+              background-color: var(--spot-color);
+              box-shadow: 0em 0.021em 0.042em rgba(0, 0, 0, 0.25) inset;
+            }
+
+            .theme-switch__spot:nth-of-type(2) {
+              width: 0.25em;
+              height: 0.25em;
+              top: 0.62em;
+              left: 0.92em;
+            }
+
+            .theme-switch__spot:nth-last-of-type(3) {
+              width: 0.17em;
+              height: 0.17em;
+              top: 0.21em;
+              left: 0.54em;
+            }
+
+            .theme-switch__clouds {
+              width: 0.83em;
+              height: 0.83em;
+              background-color: var(--clouds-color);
+              border-radius: var(--container-radius);
+              position: absolute;
+              bottom: -0.42em;
+              left: 0.21em;
+              box-shadow: 0.62em 0.21em var(--clouds-color), -0.21em -0.21em var(--back-clouds-color), 0.96em 0.25em var(--clouds-color), 0.33em -0.08em var(--back-clouds-color), 1.46em 0 var(--clouds-color), 0.83em -0.04em var(--back-clouds-color), 1.96em 0.21em var(--clouds-color), 1.33em -0.21em var(--back-clouds-color), 2.42em -0.04em var(--clouds-color), 1.75em 0em var(--back-clouds-color), 3em -0.21em var(--clouds-color), 2.25em -0.29em var(--back-clouds-color), 3.08em -1.17em 0 0.29em var(--clouds-color), 2.67em -0.42em var(--back-clouds-color), 2.75em -1.42em 0 0.29em var(--back-clouds-color);
+              transition: 0.5s cubic-bezier(0, -0.02, 0.4, 1.25);
+            }
+
+            .theme-switch__stars-container {
+              position: absolute;
+              color: var(--stars-color);
+              top: -100%;
+              left: 0.21em;
+              width: 1.83em;
+              height: auto;
+              font-size: 0.7em;
+              transition: var(--transition);
+            }
+
+            .theme-switch__checkbox:checked + .theme-switch__container {
+              background-color: var(--container-night-bg);
+            }
+
+            .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__circle-container {
+              left: calc(100% - var(--circle-container-offset) - var(--circle-container-diameter));
+            }
+
+            .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__moon {
+              transform: translate(0);
+            }
+
+            .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__clouds {
+              bottom: -2.71em;
+            }
+
+            .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__stars-container {
+              top: 50%;
+              transform: translateY(-50%);
+            }
           `}</style>
         </header>
 
@@ -443,7 +605,7 @@ export default function CutsPage() {
               {/* Info Box */}
               <div className="p-4 rounded-xl mb-6" style={{ backgroundColor: isDarkMode ? '#1a2a3a' : '#e0f2fe', border: `1px solid ${isDarkMode ? '#2d4a5a' : '#7dd3fc'}` }}>
                 <p style={{ color: isDarkMode ? '#7dd3fc' : '#0369a1', fontSize: '14px' }}>
-                  💡 <strong>Note:</strong> Each cut is recorded separately. Click "Nagamit Na!" when the cut fabric has been used.
+                  💡 <strong>Note:</strong> Each cut is recorded separately. Click &quot;Nagamit Na!&quot; when the cut fabric has been used.
                 </p>
               </div>
 
@@ -532,7 +694,7 @@ export default function CutsPage() {
               {/* Info */}
               <div className="p-4 rounded-xl mb-6" style={{ backgroundColor: isDarkMode ? '#1a2a3a' : '#e0f2fe', border: `1px solid ${isDarkMode ? '#2d4a5a' : '#7dd3fc'}` }}>
                 <p style={{ color: isDarkMode ? '#7dd3fc' : '#0369a1', fontSize: '14px' }}>
-                  💡 <strong>How it works:</strong> Cancelled orders from ShopSales appear here. Click "Restock to Inventory" when the parcel arrives.
+                  💡 <strong>How it works:</strong> Cancelled orders from ShopSales appear here. Click &quot;Restock to Inventory&quot; when the parcel arrives.
                 </p>
               </div>
 
@@ -614,9 +776,7 @@ export default function CutsPage() {
       </main>
 
       {/* Add Cut Modal - Simple: Product + Yards only */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
-          <div className="rounded-2xl shadow-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()} style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} contentClassName="max-w-md" style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
             <div className="p-6 border-b flex justify-between items-start" style={{ borderColor: isDarkMode ? '#2d2d44' : '#e1e8ed' }}>
               <div>
                 <h2 className="text-xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>✂️ Record Fabric Cut</h2>
@@ -629,8 +789,7 @@ export default function CutsPage() {
                 ✕
               </button>
             </div>
-
-            <form onSubmit={handleAddCut} className="p-6 space-y-4">
+            <form onSubmit={handleAddCut} className="modal-scroll p-6 space-y-4">
               {/* Product */}
               <div>
                 <label className="block text-sm font-medium mb-2" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>Product *</label>
@@ -659,9 +818,7 @@ export default function CutsPage() {
                 <Button type="submit" style={{ flex: 1 }}>✂️ Record Cut</Button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {(loading || isThemeSwitching) && <Loader />}
     </div>

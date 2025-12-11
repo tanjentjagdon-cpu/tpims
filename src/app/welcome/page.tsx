@@ -6,11 +6,6 @@ import Button from '@/components/Button';
 
 export default function WelcomePage() {
   const { isDarkMode, toggleTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const handleGetStarted = () => {
     window.location.href = '/loading';
@@ -20,9 +15,7 @@ export default function WelcomePage() {
     toggleTheme();
   };
 
-  if (!mounted) {
-    return null;
-  }
+  
 
   return (
     <>

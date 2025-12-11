@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: tpims
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start -- -p $PORT -H 0.0.0.0
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET
+        value: images

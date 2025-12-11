@@ -154,6 +154,34 @@ export async function deleteAllSales(userId: string): Promise<void> {
   }
 }
 
+// Delete all rows for a specific order_id
+export async function deleteSalesByOrderId(userId: string, orderId: string): Promise<void> {
+  const { error } = await supabase
+    .from('shop_sales')
+    .delete()
+    .eq('user_id', userId)
+    .eq('order_id', orderId);
+
+  if (error) {
+    console.error('Error deleting sales by order_id:', error);
+    throw error;
+  }
+}
+
+// Update rows for a specific order_id
+export async function updateSalesByOrderId(userId: string, orderId: string, updates: Partial<ShopSale>): Promise<void> {
+  const { error } = await supabase
+    .from('shop_sales')
+    .update(updates)
+    .eq('user_id', userId)
+    .eq('order_id', orderId);
+
+  if (error) {
+    console.error('Error updating sales by order_id:', error);
+    throw error;
+  }
+}
+
 // ============================================
 // PARSE CSV ROW TO SHOP SALE
 // Based on Shopee Excel export format

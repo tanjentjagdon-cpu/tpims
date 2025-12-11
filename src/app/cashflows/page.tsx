@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import * as inventoryService from '@/lib/inventoryService';
+import Image from 'next/image';
 import { useTheme } from '@/lib/themeContext';
 import Loader from '@/components/Loader';
 import Button from '@/components/Button';
+import Modal from '@/components/Modal';
 
 interface CashFlow {
   id: string;
@@ -14,7 +17,7 @@ interface CashFlow {
   category: string;
   date: string;
   notes?: string;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export default function CashFlowsPage() {
@@ -22,7 +25,7 @@ export default function CashFlowsPage() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const { isDarkMode, isThemeSwitching } = useTheme();
+  const { isDarkMode, isThemeSwitching, toggleTheme } = useTheme();
   const [currentPage] = useState('cashflows');
   const [cashflows, setCashflows] = useState<CashFlow[]>([]);
   const [showModal, setShowModal] = useState(false);
@@ -86,6 +89,19 @@ export default function CashFlowsPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  useEffect(() => {
+    const loadData = async () => {
+      if (!user) return;
+      try {
+        const list = await inventoryService.loadCashFlows(user.id);
+        setCashflows(list);
+      } catch (error) {
+        console.error('Error loading cashflows:', error);
+      }
+    };
+    loadData();
+  }, [user]);
+
   // Export cashflows to Excel
   const handleExport = async () => {
     if (cashflows.length === 0) {
@@ -143,25 +159,43 @@ export default function CashFlowsPage() {
     return null;
   }
 
-  const handleAddCashflow = (e: React.FormEvent) => {
+  const handleAddCashflow = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.description || !formData.amount || !formData.category) {
       alert('Please fill in all required fields');
       return;
     }
 
-    const newCashflow: CashFlow = {
-      id: Date.now().toString(),
-      description: formData.description,
-      type: formData.type,
-      amount: parseFloat(formData.amount),
-      category: formData.category,
-      date: formData.date,
-      notes: formData.notes,
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      const saved = await inventoryService.saveCashFlow(user.id, {
+        description: formData.description,
+        type: formData.type,
+        amount: parseFloat(formData.amount),
+        category: formData.category,
+        date: formData.date,
+        notes: formData.notes,
+        referenceId: null,
+      });
 
-    setCashflows([newCashflow, ...cashflows]);
+      const newCashflow: CashFlow = {
+        id: saved.id,
+        description: saved.description,
+        type: saved.type,
+        amount: saved.amount,
+        category: saved.category,
+        date: saved.date,
+        notes: saved.notes || '',
+        createdAt: new Date().toISOString(),
+      };
+
+      setCashflows([newCashflow, ...cashflows]);
+      setAlertMessage({ message: 'Cashflow saved', type: 'success' });
+      setTimeout(() => setAlertMessage(null), 2000);
+    } catch (error) {
+      console.error('Error saving cashflow:', error);
+      setAlertMessage({ message: 'Failed to save cashflow', type: 'error' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    }
     setFormData({
       description: '',
       type: 'income',
@@ -178,9 +212,18 @@ export default function CashFlowsPage() {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDeleteCashflow = () => {
+  const confirmDeleteCashflow = async () => {
     if (!deleteTargetId) return;
-    setCashflows(cashflows.filter(c => c.id !== deleteTargetId));
+    try {
+      await inventoryService.deleteCashFlow(deleteTargetId);
+      setCashflows(cashflows.filter(c => c.id !== deleteTargetId));
+      setAlertMessage({ message: 'Cashflow deleted', type: 'success' });
+      setTimeout(() => setAlertMessage(null), 2000);
+    } catch (error) {
+      console.error('Error deleting cashflow:', error);
+      setAlertMessage({ message: 'Failed to delete cashflow', type: 'error' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    }
     setExpandedCashflowId(null);
     setShowDeleteConfirm(false);
     setDeleteTargetId(null);
@@ -226,7 +269,7 @@ export default function CashFlowsPage() {
           borderRight: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}`,
         }}>
         <div className="flex items-center gap-3" style={{ height: '70px', padding: '0 20px', borderBottom: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}`, flexShrink: 0 }}>
-          <img src="/Logo.jpg" alt="TelaPhoria Logo" className="w-10 h-10 object-cover rounded-lg" />
+          <Image src="/Logo.jpg" alt="TelaPhoria Logo" width={40} height={40} className="w-10 h-10 object-cover rounded-lg" />
           <h2 className="text-lg font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
             TelaPhoria
           </h2>
@@ -298,7 +341,7 @@ export default function CashFlowsPage() {
               style={{
                 backgroundColor: isDarkMode ? '#2d2d44' : '#e8dce8',
               }}>
-              <img src="/Logo.jpg" alt="Toggle menu" className="w-6 h-6 object-cover rounded" />
+              <Image src="/Logo.jpg" alt="Toggle menu" width={24} height={24} className="w-6 h-6 object-cover rounded" />
             </button>
           </div>
 
@@ -473,19 +516,7 @@ export default function CashFlowsPage() {
             <input 
               type="checkbox" 
               className="theme-switch__checkbox" 
-              onChange={() => {
-                const newTheme = isDarkMode ? 'light' : 'dark';
-                localStorage.setItem('theme', newTheme);
-                document.documentElement.setAttribute('data-theme', newTheme);
-                if (newTheme === 'dark') {
-                  document.documentElement.classList.add('dark');
-                  document.body.classList.add('dark-mode');
-                } else {
-                  document.documentElement.classList.remove('dark');
-                  document.body.classList.remove('dark-mode');
-                }
-                window.location.reload();
-              }}
+              onChange={toggleTheme}
               checked={isDarkMode}
             />
             <div className="theme-switch__container">
@@ -505,7 +536,7 @@ export default function CashFlowsPage() {
         </header>
 
         <div className="flex-1 w-full p-6 md:p-8 overflow-auto" style={{ backgroundColor: isDarkMode ? '#0f0f1e' : '#fff0f5', marginTop: '70px' }}>
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-[680px] mx-auto px-4">
             {/* Alert */}
             {alertMessage && (
               <div 
@@ -707,9 +738,7 @@ export default function CashFlowsPage() {
             </div>
 
           {/* Add Cashflow Modal */}
-          {showModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="rounded-2xl w-full max-w-[95vw] md:max-w-2xl flex flex-col max-h-[90vh]" style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
+          <Modal isOpen={showModal} onClose={() => setShowModal(false)} style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
                 {/* Modal Header - Fixed */}
                 <div className="flex justify-between items-center p-6 flex-shrink-0" style={{ borderBottom: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
                   <h2 className="text-2xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
@@ -724,7 +753,7 @@ export default function CashFlowsPage() {
                 </div>
 
                 {/* Modal Content - Scrollable */}
-                <form onSubmit={handleAddCashflow} className="flex-1 overflow-y-auto p-6 space-y-4" id="cashflow-form">
+                <form onSubmit={handleAddCashflow} className="modal-scroll flex-1 p-6 space-y-4" id="cashflow-form">
                   {/* Description */}
                   <div>
                     <label className="block text-sm font-medium mb-2" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
@@ -871,9 +900,7 @@ export default function CashFlowsPage() {
                     Save Cashflow
                   </Button>
                 </div>
-              </div>
-            </div>
-          )}
+          </Modal>
         </div>
 
         {/* Delete Confirmation Modal */}

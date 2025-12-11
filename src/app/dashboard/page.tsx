@@ -34,7 +34,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const { isDarkMode, isThemeSwitching } = useTheme();
+  const { isDarkMode, isThemeSwitching, toggleTheme } = useTheme();
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [globalSearch, setGlobalSearch] = useState('');
   const [searchResults, setSearchResults] = useState<{page: string, icon: string, label: string, matches: string[]}[]>([]);
@@ -607,19 +607,7 @@ export default function DashboardPage() {
             <input 
               type="checkbox" 
               className="theme-switch__checkbox" 
-              onChange={() => {
-                const newTheme = isDarkMode ? 'light' : 'dark';
-                localStorage.setItem('theme', newTheme);
-                document.documentElement.setAttribute('data-theme', newTheme);
-                if (newTheme === 'dark') {
-                  document.documentElement.classList.add('dark');
-                  document.body.classList.add('dark-mode');
-                } else {
-                  document.documentElement.classList.remove('dark');
-                  document.body.classList.remove('dark-mode');
-                }
-                window.location.reload();
-              }}
+              onChange={toggleTheme}
               checked={isDarkMode}
             />
             <div className="theme-switch__container">
@@ -744,7 +732,7 @@ export default function DashboardPage() {
                       color: isDarkMode ? '#9aa0a6' : '#7f8c8d',
                     }}
                   >
-                    No pages found for "{globalSearch}"
+                    No pages found for &quot;{globalSearch}&quot;
                   </div>
                 )}
               </div>

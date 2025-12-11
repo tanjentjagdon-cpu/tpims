@@ -11,31 +11,19 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return savedTheme ? savedTheme === 'dark' : prefersDark;
+  });
   const [isThemeSwitching, setIsThemeSwitching] = useState(false);
 
   useEffect(() => {
-    // Check localStorage for saved theme preference
-    const savedTheme = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    const shouldBeDark = savedTheme ? savedTheme === 'dark' : prefersDark;
-    setIsDarkMode(shouldBeDark);
-    
-    // Apply theme to html element
-    if (shouldBeDark) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      document.documentElement.classList.add('dark');
-      document.body.classList.add('dark-mode');
-    } else {
-      document.documentElement.setAttribute('data-theme', 'light');
-      document.documentElement.classList.remove('dark');
-      document.body.classList.remove('dark-mode');
-    }
-    
-    setMounted(true);
-  }, []);
+    document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark', isDarkMode);
+    document.body.classList.toggle('dark-mode', isDarkMode);
+  }, [isDarkMode]);
 
   const toggleTheme = () => {
     setIsThemeSwitching(true);

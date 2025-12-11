@@ -10,7 +10,7 @@ export default function TaxationPage() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const { isDarkMode, isThemeSwitching } = useTheme();
+  const { isDarkMode, isThemeSwitching, toggleTheme } = useTheme();
   const [currentPage] = useState('taxation');
 
   const menuItems = [
@@ -341,19 +341,7 @@ export default function TaxationPage() {
             <input 
               type="checkbox" 
               className="theme-switch__checkbox" 
-              onChange={() => {
-                const newTheme = isDarkMode ? 'light' : 'dark';
-                localStorage.setItem('theme', newTheme);
-                document.documentElement.setAttribute('data-theme', newTheme);
-                if (newTheme === 'dark') {
-                  document.documentElement.classList.add('dark');
-                  document.body.classList.add('dark-mode');
-                } else {
-                  document.documentElement.classList.remove('dark');
-                  document.body.classList.remove('dark-mode');
-                }
-                window.location.reload();
-              }}
+              onChange={toggleTheme}
               checked={isDarkMode}
             />
             <div className="theme-switch__container">

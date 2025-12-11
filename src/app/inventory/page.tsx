@@ -8,6 +8,7 @@ import * as imageService from '@/lib/imageService';
 import Loader from '@/components/Loader';
 import Button from '@/components/Button';
 import ImageUpload from '@/components/ImageUpload';
+import Modal from '@/components/Modal';
 
 interface Product {
   id: string;
@@ -24,7 +25,7 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const { isDarkMode, isThemeSwitching } = useTheme();
+  const { isDarkMode, isThemeSwitching, toggleTheme } = useTheme();
   const [currentPage] = useState('inventory');
   const [showModal, setShowModal] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
@@ -770,19 +771,7 @@ export default function InventoryPage() {
             <input 
               type="checkbox" 
               className="theme-switch__checkbox" 
-              onChange={() => {
-                const newTheme = isDarkMode ? 'light' : 'dark';
-                localStorage.setItem('theme', newTheme);
-                document.documentElement.setAttribute('data-theme', newTheme);
-                if (newTheme === 'dark') {
-                  document.documentElement.classList.add('dark');
-                  document.body.classList.add('dark-mode');
-                } else {
-                  document.documentElement.classList.remove('dark');
-                  document.body.classList.remove('dark-mode');
-                }
-                window.location.reload();
-              }}
+              onChange={toggleTheme}
               checked={isDarkMode}
             />
             <div className="theme-switch__container">
@@ -899,12 +888,7 @@ export default function InventoryPage() {
       </main>
 
       {/* Product Detail Modal - Pop Out Card */}
-      {expandedProductId && products.find(p => p.id === expandedProductId) && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setExpandedProductId(null)}>
-          <div 
-            className="rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in duration-200"
-            onClick={(e) => e.stopPropagation()}
-            style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#efe5f0' }}>
+      <Modal isOpen={!!(expandedProductId && products.find(p => p.id === expandedProductId))} onClose={() => setExpandedProductId(null)} contentClassName="max-w-md overflow-hidden" style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#efe5f0' }}>
             {(() => {
               const product = products.find(p => p.id === expandedProductId);
               if (!product) return null;
@@ -967,14 +951,10 @@ export default function InventoryPage() {
                 </>
               );
             })()}
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Add Product Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 md:p-4">
-          <div className="rounded-2xl w-full max-w-[95vw] md:max-w-2xl flex flex-col max-h-[90vh]" style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
             {/* Modal Header - Fixed */}
             <div className="flex justify-between items-center p-4 md:p-6 flex-shrink-0" style={{ borderBottom: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
               <h2 className="text-xl md:text-2xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
@@ -993,7 +973,7 @@ export default function InventoryPage() {
             </div>
 
             {/* Modal Content - Scrollable */}
-            <form onSubmit={handleAddProduct} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4" id="product-form">
+            <form onSubmit={handleAddProduct} className="modal-scroll flex-1 p-4 md:p-6 space-y-4" id="product-form">
               {/* Category - Can select or manually enter */}
               <div>
                 <label className="block text-sm font-medium mb-2" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
@@ -1153,9 +1133,7 @@ export default function InventoryPage() {
                 {editingProductId ? 'Update Product' : 'Save Product'}
               </Button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (

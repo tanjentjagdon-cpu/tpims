@@ -6,6 +6,9 @@ import { useTheme } from '@/lib/themeContext';
 import Loader from '@/components/Loader';
 import Button from '@/components/Button';
 import ImageUpload from '@/components/ImageUpload';
+import Modal from '@/components/Modal';
+import * as imageService from '@/lib/imageService';
+import * as inventoryService from '@/lib/inventoryService';
 
 interface Expense {
   id: string;
@@ -23,7 +26,7 @@ export default function ExpensesPage() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const { isDarkMode, isThemeSwitching } = useTheme();
+  const { isDarkMode, isThemeSwitching, toggleTheme } = useTheme();
   const [currentPage] = useState('expenses');
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [showModal, setShowModal] = useState(false);
@@ -72,11 +75,8 @@ export default function ExpensesPage() {
           return;
         }
         setUser(session.user);
-        // Load expenses from localStorage
-        const storedExpenses = localStorage.getItem('expenses');
-        if (storedExpenses) {
-          setExpenses(JSON.parse(storedExpenses));
-        }
+        const data = await inventoryService.loadExpenses(session.user.id);
+        setExpenses(data);
       } catch (error) {
         console.error('Auth error:', error);
         window.location.href = '/login';
@@ -487,19 +487,7 @@ export default function ExpensesPage() {
             <input 
               type="checkbox" 
               className="theme-switch__checkbox" 
-              onChange={() => {
-                const newTheme = isDarkMode ? 'light' : 'dark';
-                localStorage.setItem('theme', newTheme);
-                document.documentElement.setAttribute('data-theme', newTheme);
-                if (newTheme === 'dark') {
-                  document.documentElement.classList.add('dark');
-                  document.body.classList.add('dark-mode');
-                } else {
-                  document.documentElement.classList.remove('dark');
-                  document.body.classList.remove('dark-mode');
-                }
-                window.location.reload();
-              }}
+              onChange={toggleTheme}
               checked={isDarkMode}
             />
             <div className="theme-switch__container">
@@ -699,16 +687,7 @@ export default function ExpensesPage() {
         </div>
 
         {/* Modal */}
-        {showModal && (
-          <div
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 md:p-4"
-            onClick={() => setShowModal(false)}>
-            <div
-              className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-[95vw] md:max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff',
-              }}>
+        <Modal isOpen={showModal} onClose={() => setShowModal(false)} style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
               <div className="p-4 md:p-8 border-b flex justify-between items-center" style={{ borderColor: isDarkMode ? '#2d2d44' : '#e1e8ed' }}>
                 <h2 className="text-xl md:text-3xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
                   {editingExpenseId ? '✏️ Edit Expense' : '➕ Add Expense'}
@@ -736,53 +715,39 @@ export default function ExpensesPage() {
                     ? formData.fee + (formData.deliveryFee || 0)
                     : formData.fee;
 
-                  // Convert image to base64 if present
-                  let imageBase64 = '';
+                  let imageUrl: string | undefined = undefined;
                   if (formData.image) {
-                    imageBase64 = await new Promise<string>((resolve) => {
-                      const reader = new FileReader();
-                      reader.onloadend = () => resolve(reader.result as string);
-                      reader.readAsDataURL(formData.image as File);
-                    });
+                    const upload = await imageService.uploadImage(formData.image);
+                    if (upload.success && upload.url) {
+                      imageUrl = upload.url;
+                    }
                   }
 
                   if (editingExpenseId) {
-                    // Edit mode
-                    const existingExpense = expenses.find(exp => exp.id === editingExpenseId);
-                    const updatedExpenses = expenses.map(exp => 
-                      exp.id === editingExpenseId 
-                        ? {
-                            ...exp,
-                            date: formData.date,
-                            name: formData.name,
-                            type: formData.type,
-                            fee: formData.fee,
-                            deliveryFee: formData.type === 'Materials' ? formData.deliveryFee : undefined,
-                            total,
-                            image: imageBase64 || existingExpense?.image,
-                          }
-                        : exp
-                    );
-                    setExpenses(updatedExpenses);
-                    localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
-                    setAlertMessage({ message: 'Updated na ni Tanjent', type: 'success' });
-                    setTimeout(() => setAlertMessage(null), 3000);
-                  } else {
-                    // Add mode
-                    const newExpense: Expense = {
-                      id: `expense_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    await inventoryService.updateExpense(editingExpenseId, {
                       date: formData.date,
                       name: formData.name,
                       type: formData.type,
                       fee: formData.fee,
-                      deliveryFee: formData.type === 'Materials' ? formData.deliveryFee : undefined,
+                      deliveryFee: formData.type === 'Materials' ? formData.deliveryFee : 0,
                       total,
-                      image: imageBase64 || undefined,
-                    };
-
-                    const updatedExpenses = [newExpense, ...expenses];
-                    setExpenses(updatedExpenses);
-                    localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
+                      image: imageUrl || undefined,
+                    });
+                    const data = await inventoryService.loadExpenses(user.id);
+                    setExpenses(data);
+                    setAlertMessage({ message: 'Updated na ni Tanjent', type: 'success' });
+                    setTimeout(() => setAlertMessage(null), 3000);
+                  } else {
+                    const saved = await inventoryService.saveExpense(user.id, {
+                      date: formData.date,
+                      name: formData.name,
+                      type: formData.type,
+                      fee: formData.fee,
+                      deliveryFee: formData.type === 'Materials' ? formData.deliveryFee : 0,
+                      total,
+                      image: imageUrl || null,
+                    });
+                    setExpenses([saved, ...expenses]);
                     setAlertMessage({ message: 'Filed and Saved na ni Gab sa Library ng app natin', type: 'success' });
                     setTimeout(() => setAlertMessage(null), 3000);
                   }
@@ -798,7 +763,7 @@ export default function ExpensesPage() {
                   setEditingExpenseId(null);
                   setShowModal(false);
                 }}
-                className="p-6 md:p-8 space-y-6">
+                className="modal-scroll p-6 md:p-8 space-y-6">
                 {/* Date */}
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
@@ -935,9 +900,7 @@ export default function ExpensesPage() {
                   )}
                 </div>
               </form>
-            </div>
-          </div>
-        )}
+        </Modal>
 
         {/* Delete Confirmation Modal */}
         {showDeleteConfirm && (
@@ -988,10 +951,12 @@ export default function ExpensesPage() {
                     Cancel
                   </button>
                   <button
-                    onClick={() => {
-                      const updatedExpenses = expenses.filter(exp => exp.id !== editingExpenseId);
-                      setExpenses(updatedExpenses);
-                      localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
+                    onClick={async () => {
+                      if (editingExpenseId) {
+                        await inventoryService.deleteExpense(editingExpenseId);
+                        const data = await inventoryService.loadExpenses(user.id);
+                        setExpenses(data);
+                      }
                       setFormData({
                         date: new Date().toISOString().split('T')[0],
                         name: '',

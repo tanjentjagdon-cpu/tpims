@@ -764,6 +764,13 @@ export default function LoginPage() {
           .logo { width: 100px; height: 100px; font-size: 40px; }
           .login-header h1 { font-size: 28px; }
           .theme-switch { top: 15px; right: 15px; }
+          .forgot-password-alert {
+            left: 12px;
+            right: 12px;
+            transform: none;
+            max-width: none;
+            top: 16px;
+          }
         }
 
         @media (max-width: 360px) {
@@ -771,6 +778,13 @@ export default function LoginPage() {
           .logo { width: 80px; height: 80px; font-size: 32px; }
           .form-group input { padding: 12px 16px; font-size: 14px; }
           .submit-btn { padding: 12px; font-size: 15px; }
+          .forgot-password-alert {
+            left: 10px;
+            right: 10px;
+            transform: none;
+            max-width: none;
+            top: 12px;
+          }
         }
       `}</style>
 

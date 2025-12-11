@@ -7,6 +7,8 @@ import * as inventoryService from '@/lib/inventoryService';
 import * as shopSalesService from '@/lib/shopSalesService';
 import Loader from '@/components/Loader';
 import Button from '@/components/Button';
+import Modal from '@/components/Modal';
+import ShopIcon from '@/components/ShopIcon';
 
 interface Product {
   id: string;
@@ -77,7 +79,7 @@ export default function ShopSalesPage() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const { isDarkMode, isThemeSwitching } = useTheme();
+  const { isDarkMode, isThemeSwitching, toggleTheme } = useTheme();
   const [currentPage] = useState('shopsales');
   const [showModal, setShowModal] = useState(false);
   const [editingSaleId, setEditingSaleId] = useState<string | null>(null); // Track which sale is being edited
@@ -590,16 +592,68 @@ export default function ShopSalesPage() {
         }
       }
 
+      // Persist to Supabase shop_sales (one row per product)
+      const perCount = saleProducts.length;
+      const perService = (formData.serviceFee || 0) / perCount;
+      const perTransaction = (formData.transactionFee || 0) / perCount;
+      const perTax = (formData.withholdingTax || 0) / perCount;
+      const perShipCharged = (formData.estimatedShippingFeeCharged || 0) / perCount;
+      const perShipRebate = (formData.shippingFeeRebate || 0) / perCount;
+      const perShipBuyer = perShipCharged; // treat buyer-paid as estimated charged per share
+
+      // If editing, remove existing rows for this order first
       if (isEditing) {
-        // Update existing sale
+        await shopSalesService.deleteSalesByOrderId(user.id, newSale.id);
+      }
+
+      const rows = saleProducts.map((p) => ({
+        user_id: user.id,
+        order_id: newSale.id,
+        shop: newSale.shop,
+        order_date: new Date(formData.dateOrdered).toISOString(),
+        completion_date: newSale.status === 'Completed' ? new Date().toISOString() : null,
+        buyer_name: newSale.buyerName,
+        buyer_contact: newSale.contactNo,
+        buyer_address: newSale.address,
+        product_name: p.productName,
+        item_price: p.unitPrice,
+        quantity: p.quantity,
+        subtotal: p.subtotal,
+        shipping_fee_buyer: perShipBuyer,
+        estimated_shipping_fee_charged: undefined as any,
+        shipping_fee_charged: perShipCharged,
+        shipping_fee_rebate: perShipRebate,
+        service_fee: perService,
+        transaction_fee: perTransaction,
+        tax: perTax,
+        net_total: p.subtotal + perShipBuyer - perShipRebate - (perService + perTransaction + perTax),
+        merchandise_subtotal: orderTotal,
+        shipping_fee: perShipCharged - perShipRebate,
+        shopee_voucher: 0,
+        seller_voucher: 0,
+        payment_discount: 0,
+        shopee_coin_redeem: 0,
+        total_buyer_payment: 0,
+        status: newSale.status || 'Delivered',
+        released_date: newSale.releasedDate || null,
+        released_time: newSale.releasedTime || null,
+        income_status: newSale.incomeStatus || 'Pending',
+      }));
+
+      const result = await shopSalesService.bulkInsertSales(rows as any);
+      if (result.errors.length) {
+        console.warn('Some rows failed to insert:', result.errors);
+      }
+
+      // Update local UI list
+      if (isEditing) {
         const updatedSales = [...sales];
         updatedSales[existingSaleIndex] = newSale;
         setSales(updatedSales);
-        setAlertMessage({ message: `Order updated with ${saleProducts.length} product(s) - Updated na ni Gab sa Library ng app natin`, type: 'success' });
+        setAlertMessage({ message: `Order updated with ${saleProducts.length} product(s)`, type: 'success' });
       } else {
-        // Add new sale
         setSales([newSale, ...sales]);
-        setAlertMessage({ message: `Order with ${saleProducts.length} product(s) - Filed and Saved na ni Gab sa Library ng app natin`, type: 'success' });
+        setAlertMessage({ message: `Order with ${saleProducts.length} product(s) saved`, type: 'success' });
       }
       setTimeout(() => setAlertMessage(null), 3000);
       setFormData({
@@ -649,6 +703,9 @@ export default function ShopSalesPage() {
         }
       }
       
+      if (user) {
+        await shopSalesService.deleteSalesByOrderId(user.id, deleteTargetId);
+      }
       setSales(sales.filter(s => s.id !== deleteTargetId));
       setExpandedSaleId(null);
       setShowDeleteConfirm(false);
@@ -690,11 +747,10 @@ export default function ShopSalesPage() {
           console.error('Error restoring inventory on cancellation:', error);
         }
 
-        // Add to returned_parcels for restocking later
+        // Add to returned_parcels in Supabase for restocking later
         try {
           const products = sale.products || [{ productId: sale.productId, productName: sale.productName, quantity: sale.quantity }];
           const returnedParcel = {
-            id: `return_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             orderId: saleId,
             shop: sale.shop,
             products: products.map(p => ({
@@ -702,15 +758,12 @@ export default function ShopSalesPage() {
               productName: p.productName,
               quantity: p.quantity,
             })),
-            returnDate: new Date().toISOString(),
-            status: 'Pending' as const,
+            returnDate: new Date().toISOString().split('T')[0],
+            status: 'Pending',
           };
-          
-          const existingReturns = JSON.parse(localStorage.getItem('returned_parcels') || '[]');
-          const filteredReturns = existingReturns.filter((r: any) => r.orderId !== saleId);
-          localStorage.setItem('returned_parcels', JSON.stringify([returnedParcel, ...filteredReturns]));
+          await inventoryService.saveReturnedParcel(user.id, returnedParcel);
         } catch (error) {
-          console.error('Error saving to returned parcels:', error);
+          console.error('Error saving returned parcel:', error);
         }
       } else if (newStatus === 'Delivered' && oldStatus === 'Cancelled') {
         // Sale was un-cancelled - deduct quantity again
@@ -726,15 +779,23 @@ export default function ShopSalesPage() {
           console.error('Error syncing inventory on un-cancel:', error);
         }
 
-        // Remove from returned_parcels since order is no longer cancelled
+        // Remove from returned_parcels in Supabase since order is no longer cancelled
         try {
-          const existingReturns = JSON.parse(localStorage.getItem('returned_parcels') || '[]');
-          const filteredReturns = existingReturns.filter((r: any) => r.orderId !== saleId);
-          localStorage.setItem('returned_parcels', JSON.stringify(filteredReturns));
+          const returns = await inventoryService.loadReturnedParcels(user.id);
+          const target = returns.find((r: any) => r.orderId === saleId);
+          if (target?.id) {
+            await inventoryService.deleteReturnedParcel(target.id);
+          }
         } catch (error) {
-          console.error('Error removing from returned parcels:', error);
+          console.error('Error removing returned parcel:', error);
         }
       }
+
+      // Persist status change to Supabase
+      const incomeStatus: 'Pending' | 'Released' =
+        newStatus === 'Shipped' ? 'Pending' :
+        (newStatus === 'Delivered' || newStatus === 'Completed') ? 'Released' : 'Pending';
+      await shopSalesService.updateSalesByOrderId(user.id, saleId, { status: newStatus as any, income_status: incomeStatus });
     } catch (error) {
       console.error('Error updating sale status:', error);
       alert('Error updating status. Please try again.');
@@ -1074,19 +1135,7 @@ export default function ShopSalesPage() {
             <input 
               type="checkbox" 
               className="theme-switch__checkbox" 
-              onChange={() => {
-                const newTheme = isDarkMode ? 'light' : 'dark';
-                localStorage.setItem('theme', newTheme);
-                document.documentElement.setAttribute('data-theme', newTheme);
-                if (newTheme === 'dark') {
-                  document.documentElement.classList.add('dark');
-                  document.body.classList.add('dark-mode');
-                } else {
-                  document.documentElement.classList.remove('dark');
-                  document.body.classList.remove('dark-mode');
-                }
-                window.location.reload();
-              }}
+              onChange={toggleTheme}
               checked={isDarkMode}
             />
             <div className="theme-switch__container">
@@ -1314,7 +1363,7 @@ export default function ShopSalesPage() {
                       backgroundColor: isDarkMode ? '#2d2d44' : '#f3f4f6',
                       color: isDarkMode ? '#7aa6f0' : '#ff69b4',
                     }}>
-                      {sale.shop === 'Shopee' && '🛍️'} {sale.shop === 'TikTok' && '🎵'} {sale.shop === 'Lazada' && '🛒'} {sale.shop}
+                      <ShopIcon platform={sale.shop} size={16} /> {sale.shop}
                     </span>
                   </div>
 
@@ -1413,9 +1462,7 @@ export default function ShopSalesPage() {
             </div>
 
           {/* Add Sale Modal */}
-          {showModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="rounded-2xl w-full max-w-[95vw] md:max-w-2xl flex flex-col max-h-[90vh] relative" style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
+          <Modal isOpen={showModal} onClose={() => setShowModal(false)} style={{ backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff' }}>
                 {/* Modal Header - Fixed */}
                 <div className="flex justify-between items-center p-6 flex-shrink-0" style={{ borderBottom: `1px solid ${isDarkMode ? '#2d2d44' : '#e1e8ed'}` }}>
                   <h2 className="text-2xl font-bold" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
@@ -1433,7 +1480,7 @@ export default function ShopSalesPage() {
                 </div>
 
                 {/* Modal Content - Scrollable */}
-                <form onSubmit={handleAddSale} className="flex-1 overflow-y-auto p-6 space-y-4" id="sale-form">
+                <form onSubmit={handleAddSale} className="modal-scroll flex-1 p-6 space-y-4" id="sales-form">
                   {/* SECTION 1: BUYER INFORMATION - COLLAPSIBLE */}
                   <div style={{ border: `1px solid ${isDarkMode ? '#3d3d54' : '#e1e8ed'}`, borderRadius: '0.5rem' }}>
                     <button
@@ -2047,9 +2094,7 @@ export default function ShopSalesPage() {
                     {editingSaleId ? 'Update Sale' : 'Save Sale'}
                   </Button>
                 </div>
-              </div>
-            </div>
-          )}
+          </Modal>
 
           {/* Sale Detail Modal */}
           {expandedSaleId && sales.find(s => s.id === expandedSaleId) && (
@@ -2062,13 +2107,12 @@ export default function ShopSalesPage() {
                   const sale = sales.find(s => s.id === expandedSaleId);
                   if (!sale) return null;
                   
-                  // Determine shop icon/color
-                  const shopConfig: { [key: string]: { icon: string; color: string } } = {
-                    'Shopee': { icon: '🛍️', color: '#ee5a52' },
-                    'TikTok': { icon: '🎵', color: '#25f4ee' },
-                    'Lazada': { icon: '🛒', color: '#0066cc' },
+                  const shopConfig: { [key: string]: { color: string } } = {
+                    'Shopee': { color: '#ee5a52' },
+                    'TikTok': { color: '#25f4ee' },
+                    'Lazada': { color: '#0066cc' },
                   };
-                  const shopInfo = shopConfig[sale.shop] || { icon: '🏪', color: '#666' };
+                  const shopInfo = shopConfig[sale.shop] || { color: '#666' };
                   
                   return (
                     <>
@@ -2081,7 +2125,7 @@ export default function ShopSalesPage() {
                             {sale.productName}
                           </h2>
                           <div className="flex items-center gap-3">
-                            <span className="text-3xl">{shopInfo.icon}</span>
+                            <ShopIcon platform={sale.shop} size={28} color={shopInfo.color} />
                             <button
                               onClick={() => setExpandedSaleId(null)}
                               className="text-2xl hover:opacity-70 transition-opacity"
