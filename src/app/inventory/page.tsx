@@ -93,6 +93,7 @@ export default function InventoryPage() {
   const [quickAddQtyMap, setQuickAddQtyMap] = useState<{[name: string]: string}>({});
   const [showQuickPlainModal, setShowQuickPlainModal] = useState(false);
   const [bulkAdding, setBulkAdding] = useState(false);
+  const [initializingCatalog, setInitializingCatalog] = useState(false);
   const [alertMessage, setAlertMessage] = useState<{message: string; type: 'success' | 'error'} | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
@@ -503,6 +504,51 @@ export default function InventoryPage() {
       setTimeout(() => setAlertMessage(null), 3000);
     } finally {
       setBulkAdding(false);
+    }
+  };
+
+  const handleInitializeAllCatalog = async () => {
+    try {
+      if (!user) {
+        setAlertMessage({ message: 'User not authenticated', type: 'error' });
+        setTimeout(() => setAlertMessage(null), 2000);
+        return;
+      }
+      setInitializingCatalog(true);
+      let createdTotal = 0;
+      for (const catalogType of ['Plain', 'Printed'] as const) {
+        const names: string[] = ((catalogData['Geena Cloth'] as any)[catalogType] as string[]) || [];
+        for (const name of names) {
+          const exists = products.some(p => p.category === 'Geena Cloth' && p.type === catalogType && p.productName === name);
+          if (exists) continue;
+          const saved = await inventoryService.saveProduct(user.id, {
+            productName: name,
+            category: 'Geena Cloth',
+            type: catalogType,
+            quantity: 0,
+            image: null,
+          });
+          const newProduct: Product = {
+            id: saved.id,
+            productName: saved.product_name,
+            category: saved.category,
+            type: saved.type,
+            quantity: saved.quantity,
+            image: saved.image_url,
+            createdAt: saved.created_at,
+          };
+          setProducts(prev => [...prev, newProduct]);
+          createdTotal++;
+        }
+      }
+      setAlertMessage({ message: `Initialized ${createdTotal} catalog products at 0 qty`, type: 'success' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    } catch (error) {
+      console.error('Initialize catalog error:', error);
+      setAlertMessage({ message: 'Initialization failed. Try again.', type: 'error' });
+      setTimeout(() => setAlertMessage(null), 3000);
+    } finally {
+      setInitializingCatalog(false);
     }
   };
 
@@ -985,6 +1031,13 @@ export default function InventoryPage() {
             >
               {exportLoading ? '⏳...' : '📤 Export'}
             </Button>
+            <Button
+              onClick={handleInitializeAllCatalog}
+              variant="secondary"
+              disabled={initializingCatalog}
+            >
+              {initializingCatalog ? 'Initializing…' : 'Initialize Catalog (0 qty)'}
+            </Button>
           </div>
 
           {/* Products Grid - Grouped by Type with Mobile Carousel */}
@@ -1160,6 +1213,14 @@ export default function InventoryPage() {
             {/* Modal Content - Scrollable */}
             {editingProductId ? (
               <div className="modal-scroll flex-1 p-4 md:p-6 space-y-4">
+                {(() => {
+                  const target = products.find(p => p.id === editingProductId);
+                  return (
+                    <div className="mb-2" style={{ color: isDarkMode ? '#9aa0a6' : '#7f8c8d' }}>
+                      Current Qty: <span style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50', fontWeight: 700 }}>{target?.quantity ?? 0}</span>
+                    </div>
+                  );
+                })()}
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: isDarkMode ? '#e8eaed' : '#2c3e50' }}>
                     Add Yards
