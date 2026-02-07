@@ -1,0 +1,24 @@
+((js, bundle, name) => {
+  const set = (obj, path, value) => {
+    const keys = Array.isArray(path) ? path : path.split('.');
+    const last = keys.pop();
+    for (const key of keys) {
+      if (obj[key] == null) obj[key] = {};
+      obj = obj[key];
+    }
+    obj[last] = value;
+  };
+  const loading = import(js);
+  const load = options =>
+    loading.then(
+      data => data[options.name],
+      err => {
+        console.error('[finance-remote] Load error:', err);
+        throw err;
+      }
+    );
+  // const component = () => load({ name }); // This is for Vue 2
+  const component = load({ name });
+  set(window, ['sellerComponent', bundle, name, 'load'], load);
+  set(window, ['sellerComponent', bundle, name, name], component);
+})(AppConfig.CdnPrePath+"mmf_portal_seller_root_dir/static/remote-component/finance-remote/InvoiceDeniedNotice/component-p2BQK--o.js","finance-remote","InvoiceDeniedNotice");
