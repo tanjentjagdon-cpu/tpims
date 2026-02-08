@@ -49,3 +49,6 @@ next-env.d.ts
 *.md~ 
 SHOPEE_*.md
 TUNNEL_*.md
+*.xlsx
+*.xls
+*.csv
