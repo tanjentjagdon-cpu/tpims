@@ -164,6 +164,7 @@ export default function ShopeeIncomePage() {
                 }
             })
 
+            const skippedCount = shopeeTxns.length - toInsert.length - toUpdate.length
             let message = ''
 
             if (toInsert.length > 0) {
@@ -183,7 +184,7 @@ export default function ShopeeIncomePage() {
             }
 
             if (message) {
-                alert(`Success! Imported ${newTransactions.length} new transactions.\nSkipped ${skippedCount} duplicates.\n\nDetails: ` + message)
+                alert(`Success! Imported ${toInsert.length} new transactions.\nSkipped ${skippedCount} duplicates.\n\nDetails: ` + message)
             } else {
                 if (skippedCount > 0) {
                     alert(`Import complete. No new transactions added.\nSkipped ${skippedCount} duplicates.`)

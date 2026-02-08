@@ -9,7 +9,7 @@ import { getAuthUrl, checkTikTokIntegration, fetchOrdersAction, exchangeAndSaveT
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-export default function TiktokOrdersPage() {
+function TiktokOrdersContent() {
     const [integration, setIntegration] = React.useState<any>(null)
     const [loading, setLoading] = React.useState(true)
     const [orders, setOrders] = React.useState<any[]>([])
@@ -636,5 +636,13 @@ export default function TiktokOrdersPage() {
             )}
         </div>
 
+    )
+}
+
+export default function TiktokOrdersPage() {
+    return (
+        <React.Suspense fallback={<div>Loading...</div>}>
+            <TiktokOrdersContent />
+        </React.Suspense>
     )
 }

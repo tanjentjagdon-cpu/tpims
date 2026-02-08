@@ -3,9 +3,9 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 
-export default function HomePage() {
+function HomeContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const code = searchParams.get('code')
@@ -32,5 +32,13 @@ export default function HomePage() {
         </Link>
       </div>
     </main>
+  )
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   )
 }
