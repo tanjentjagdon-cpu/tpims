@@ -1,5 +1,5 @@
 
-import { parseShopeeOrderText } from './src/lib/shopee-parser.ts';
+import { parseShopeeOrderText } from '../src/lib/shopee-parser';
 
 const text = `
 Order ID 241106U5X9F3Q1
